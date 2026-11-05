@@ -474,7 +474,7 @@ footer {
 
 <script>
 /* ==========================================
-   CONFIGURACIÓN DE SUPABASE
+   CONFIGURACIÓN Y CARGA DESDE SUPABASE
    ========================================== */
 const supabaseUrl = 'https://mouvifqcmdlypegtyjfw.supabase.co';
 const supabaseKey = 'sb_publishable_5bqnQQBhY5QRnhGW9p7fuA_C4Y2crZP';
@@ -483,19 +483,18 @@ const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 let collections = [];
 
-/* CARGAR DATOS DESDE SUPABASE AL INICIAR */
 async function initApp() {
   try {
     const { data, error } = await _supabase.from('collections').select('*');
     if (error) {
-      console.error("Error al cargar colecciones:", error);
+      console.error("Error al cargar de Supabase:", error);
       return;
     }
     if (data) {
       collections = data;
     }
   } catch (err) {
-    console.error("Fallo de conexión con Supabase:", err);
+    console.error("Fallo de conexión:", err);
   }
   goHome();
 }
@@ -524,7 +523,7 @@ const trackCounter = document.getElementById("track-counter");
 
 /* ESTADO DE NAVEGACIÓN */
 let currentCategory = "album";
-let currentCollectionId = null;
+let currentCollection = 0;
 let currentTrack = 0;
 
 
@@ -548,15 +547,20 @@ function showCategory(type) {
   const isAlbum = type === "album";
 
   categoryTitle.textContent = isAlbum ? "Álbumes" : "Playlists";
+
   categoryDescription.textContent = isAlbum
     ? "Descubre nuestros álbumes musicales."
     : "Explora nuestras listas de reproducción.";
 
   collectionGrid.innerHTML = "";
 
-  const filtered = collections.filter(item => item.type === type);
+  const filtered = collections
+    .map((collection, index) => ({ collection, index }))
+    .filter(item => item.collection.type === type);
 
-  filtered.forEach(collection => {
+  filtered.forEach(item => {
+    const collection = item.collection;
+
     const card = document.createElement("div");
     card.className = "collection-card";
 
@@ -567,15 +571,22 @@ function showCategory(type) {
     const name = document.createElement("h3");
     name.textContent = collection.name;
 
+    // Asegurarnos de leer bien el array de canciones venga como venga
+    let tracksArr = collection.tracks;
+    if (typeof tracksArr === 'string') {
+      try { tracksArr = JSON.parse(tracksArr); } catch(e) { tracksArr = []; }
+    }
+    const trackCount = Array.isArray(tracksArr) ? tracksArr.length : 0;
+
     const info = document.createElement("p");
-    info.textContent = (collection.tracks ? collection.tracks.length : 0) + " canciones";
+    info.textContent = trackCount + " canciones";
 
     card.appendChild(image);
     card.appendChild(name);
     card.appendChild(info);
 
     card.addEventListener("click", () => {
-      openCollection(collection.id);
+      openCollection(item.index);
     });
 
     collectionGrid.appendChild(card);
@@ -583,9 +594,9 @@ function showCategory(type) {
 }
 
 
-/* ABRIR UNA COLECCIÓN POR ID */
-function openCollection(id) {
-  currentCollectionId = id;
+/* ABRIR UNA COLECCIÓN */
+function openCollection(index) {
+  currentCollection = index;
   currentTrack = 0;
 
   homePage.hidden = true;
@@ -606,8 +617,7 @@ function backToCategory() {
 
 /* MOSTRAR PORTADA Y CANCIONES */
 function renderCollection() {
-  const collection = collections.find(c => c.id === currentCollectionId);
-  if (!collection) return;
+  const collection = collections[currentCollection];
 
   cover.src = collection.cover;
   cover.alt = "Portada de " + collection.name;
@@ -620,18 +630,13 @@ function renderCollection() {
 
   trackList.innerHTML = "";
 
-  if (collection.tracks) {
-    let trackArray = collection.tracks;
-    // Si Supabase devuelve el JSON como texto plano, lo parseamos
-    if (typeof trackArray === 'string') {
-      try {
-        trackArray = JSON.parse(trackArray);
-      } catch (e) {
-        trackArray = [];
-      }
-    }
+  let tracksArr = collection.tracks;
+  if (typeof tracksArr === 'string') {
+    try { tracksArr = JSON.parse(tracksArr); } catch(e) { tracksArr = []; }
+  }
 
-    trackArray.forEach((track, index) => {
+  if (Array.isArray(tracksArr)) {
+    tracksArr.forEach((track, index) => {
       const button = document.createElement("button");
       button.className = "track";
 
@@ -659,19 +664,17 @@ function renderCollection() {
 
 /* CARGAR CANCIÓN */
 function playTrack(index) {
-  const collection = collections.find(c => c.id === currentCollectionId);
-  if (!collection || !collection.tracks) return;
-
-  let trackArray = collection.tracks;
-  if (typeof trackArray === 'string') {
-    try { trackArray = JSON.parse(trackArray); } catch (e) { trackArray = []; }
+  const collection = collections[currentCollection];
+  let tracksArr = collection.tracks;
+  if (typeof tracksArr === 'string') {
+    try { tracksArr = JSON.parse(tracksArr); } catch(e) { tracksArr = []; }
   }
 
-  if (index < 0 || index >= trackArray.length) {
+  if (!Array.isArray(tracksArr) || index < 0 || index >= tracksArr.length) {
     return;
   }
 
-  const track = trackArray[index];
+  const track = tracksArr[index];
   currentTrack = index;
 
   player.src = "https://suno.com/embed/" + track.id;
@@ -682,17 +685,16 @@ function playTrack(index) {
   });
 
   previousButton.disabled = index === 0;
-  nextButton.disabled = index === trackArray.length - 1;
+  nextButton.disabled = index === tracksArr.length - 1;
 
   trackCounter.textContent =
-    "Canción " + (index + 1) + " de " + trackArray.length;
+    "Canción " + (index + 1) + " de " + tracksArr.length;
 }
 
 
 /* CANCIÓN ANTERIOR */
 function previousTrack() {
-  const collection = collections.find(c => c.id === currentCollectionId);
-  if (collection && currentTrack > 0) {
+  if (currentTrack > 0) {
     playTrack(currentTrack - 1);
   }
 }
@@ -700,19 +702,18 @@ function previousTrack() {
 
 /* CANCIÓN SIGUIENTE */
 function nextTrack() {
-  const collection = collections.find(c => c.id === currentCollectionId);
-  if (collection && collection.tracks) {
-    let trackArray = collection.tracks;
-    if (typeof trackArray === 'string') {
-      try { trackArray = JSON.parse(trackArray); } catch (e) { trackArray = []; }
-    }
-    if (currentTrack < trackArray.length - 1) {
-      playTrack(currentTrack + 1);
-    }
+  const collection = collections[currentCollection];
+  let tracksArr = collection.tracks;
+  if (typeof tracksArr === 'string') {
+    try { tracksArr = JSON.parse(tracksArr); } catch(e) { tracksArr = []; }
+  }
+
+  if (Array.isArray(tracksArr) && currentTrack < tracksArr.length - 1) {
+    playTrack(currentTrack + 1);
   }
 }
 
-/* ARRANCAR LA APLICACIÓN AL CARGAR LA PÁGINA */
+/* ARRANCAR APP */
 initApp();
 </script>
 
