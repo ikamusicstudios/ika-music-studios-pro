@@ -621,7 +621,17 @@ function renderCollection() {
   trackList.innerHTML = "";
 
   if (collection.tracks) {
-    collection.tracks.forEach((track, index) => {
+    let trackArray = collection.tracks;
+    // Si Supabase devuelve el JSON como texto plano, lo parseamos
+    if (typeof trackArray === 'string') {
+      try {
+        trackArray = JSON.parse(trackArray);
+      } catch (e) {
+        trackArray = [];
+      }
+    }
+
+    trackArray.forEach((track, index) => {
       const button = document.createElement("button");
       button.className = "track";
 
@@ -650,11 +660,18 @@ function renderCollection() {
 /* CARGAR CANCIÓN */
 function playTrack(index) {
   const collection = collections.find(c => c.id === currentCollectionId);
-  if (!collection || !collection.tracks || index < 0 || index >= collection.tracks.length) {
+  if (!collection || !collection.tracks) return;
+
+  let trackArray = collection.tracks;
+  if (typeof trackArray === 'string') {
+    try { trackArray = JSON.parse(trackArray); } catch (e) { trackArray = []; }
+  }
+
+  if (index < 0 || index >= trackArray.length) {
     return;
   }
 
-  const track = collection.tracks[index];
+  const track = trackArray[index];
   currentTrack = index;
 
   player.src = "https://suno.com/embed/" + track.id;
@@ -665,10 +682,10 @@ function playTrack(index) {
   });
 
   previousButton.disabled = index === 0;
-  nextButton.disabled = index === collection.tracks.length - 1;
+  nextButton.disabled = index === trackArray.length - 1;
 
   trackCounter.textContent =
-    "Canción " + (index + 1) + " de " + collection.tracks.length;
+    "Canción " + (index + 1) + " de " + trackArray.length;
 }
 
 
@@ -684,8 +701,14 @@ function previousTrack() {
 /* CANCIÓN SIGUIENTE */
 function nextTrack() {
   const collection = collections.find(c => c.id === currentCollectionId);
-  if (collection && collection.tracks && currentTrack < collection.tracks.length - 1) {
-    playTrack(currentTrack + 1);
+  if (collection && collection.tracks) {
+    let trackArray = collection.tracks;
+    if (typeof trackArray === 'string') {
+      try { trackArray = JSON.parse(trackArray); } catch (e) { trackArray = []; }
+    }
+    if (currentTrack < trackArray.length - 1) {
+      playTrack(currentTrack + 1);
+    }
   }
 }
 
