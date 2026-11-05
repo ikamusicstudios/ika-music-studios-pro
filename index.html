@@ -524,7 +524,7 @@ const trackCounter = document.getElementById("track-counter");
 
 /* ESTADO DE NAVEGACIÓN */
 let currentCategory = "album";
-let currentCollection = 0;
+let currentCollectionId = null;
 let currentTrack = 0;
 
 
@@ -554,13 +554,9 @@ function showCategory(type) {
 
   collectionGrid.innerHTML = "";
 
-  const filtered = collections
-    .map((collection, index) => ({ collection, index }))
-    .filter(item => item.collection.type === type);
+  const filtered = collections.filter(item => item.type === type);
 
-  filtered.forEach(item => {
-    const collection = item.collection;
-
+  filtered.forEach(collection => {
     const card = document.createElement("div");
     card.className = "collection-card";
 
@@ -579,7 +575,7 @@ function showCategory(type) {
     card.appendChild(info);
 
     card.addEventListener("click", () => {
-      openCollection(item.index);
+      openCollection(collection.id);
     });
 
     collectionGrid.appendChild(card);
@@ -587,9 +583,9 @@ function showCategory(type) {
 }
 
 
-/* ABRIR UNA COLECCIÓN */
-function openCollection(index) {
-  currentCollection = index;
+/* ABRIR UNA COLECCIÓN POR ID */
+function openCollection(id) {
+  currentCollectionId = id;
   currentTrack = 0;
 
   homePage.hidden = true;
@@ -610,7 +606,8 @@ function backToCategory() {
 
 /* MOSTRAR PORTADA Y CANCIONES */
 function renderCollection() {
-  const collection = collections[currentCollection];
+  const collection = collections.find(c => c.id === currentCollectionId);
+  if (!collection) return;
 
   cover.src = collection.cover;
   cover.alt = "Portada de " + collection.name;
@@ -652,9 +649,8 @@ function renderCollection() {
 
 /* CARGAR CANCIÓN */
 function playTrack(index) {
-  const collection = collections[currentCollection];
-
-  if (!collection.tracks || index < 0 || index >= collection.tracks.length) {
+  const collection = collections.find(c => c.id === currentCollectionId);
+  if (!collection || !collection.tracks || index < 0 || index >= collection.tracks.length) {
     return;
   }
 
@@ -678,7 +674,8 @@ function playTrack(index) {
 
 /* CANCIÓN ANTERIOR */
 function previousTrack() {
-  if (currentTrack > 0) {
+  const collection = collections.find(c => c.id === currentCollectionId);
+  if (collection && currentTrack > 0) {
     playTrack(currentTrack - 1);
   }
 }
@@ -686,8 +683,8 @@ function previousTrack() {
 
 /* CANCIÓN SIGUIENTE */
 function nextTrack() {
-  const collection = collections[currentCollection];
-  if (collection.tracks && currentTrack < collection.tracks.length - 1) {
+  const collection = collections.find(c => c.id === currentCollectionId);
+  if (collection && collection.tracks && currentTrack < collection.tracks.length - 1) {
     playTrack(currentTrack + 1);
   }
 }
