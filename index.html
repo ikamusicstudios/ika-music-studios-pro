@@ -163,6 +163,42 @@ main {
   font-size: 13px;
 }
 
+/* NUEVA BARRA DE FILTROS EN LA VISTA DE CATEGORÍA */
+.filters-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 15px 20px;
+  border-radius: 10px;
+  margin-bottom: 25px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.filter-group select {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 .collection-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
@@ -503,7 +539,7 @@ footer {
     </div>
   </section>
 
-  <!-- LISTADO DE COLECCIONES -->
+  <!-- LISTADO DE COLECCIONES CON FILTROS -->
   <section id="category-page" hidden>
     <button class="back-button" onclick="goHome()">
       ← Volver al inicio
@@ -512,10 +548,43 @@ footer {
     <h2 class="page-title" id="category-title"></h2>
     <p class="page-description" id="category-description"></p>
 
+    <!-- BARRA DE FILTROS DE ESTILO E IDIOMA -->
+    <div class="filters-container">
+      <div class="filter-group">
+        <label for="filter-style">Estilo:</label>
+        <select id="filter-style" onchange="renderCollectionList()">
+          <option value="all">Todos los estilos</option>
+          <option value="rock">Rock</option>
+          <option value="pop">Pop</option>
+          <option value="flamenco">Flamenco / Rumba</option>
+          <option value="folk">Folk</option>
+          <option value="electronic">Electronic / Dance</option>
+          <option value="balada">Balada / Acústico</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-language">Idioma:</label>
+        <select id="filter-language" onchange="renderCollectionList()">
+          <option value="all">🌐 Todos los idiomas</option>
+          <option value="es">Español 🇪🇸</option>
+          <option value="en">Inglés 🇬🇧</option>
+          <option value="ru">Ruso 🇷🇺</option>
+          <option value="fr">Francés 🇫🇷</option>
+          <option value="it">Italiano 🇮🇹</option>
+          <option value="pt">Portugués 🇵🇹</option>
+          <option value="de">Alemán 🇩🇪</option>
+          <option value="la">Latín / Varios 🌍</option>
+          <option value="other">Otro 🌐</option>
+          <option value="instrumental">Instrumental 🎼</option>
+        </select>
+      </div>
+    </div>
+
     <div class="collection-grid" id="collection-grid"></div>
   </section>
 
-  <!-- DETALLE DE UNA COLECCIÓN -->
+  <!-- DETALLE DE UNA COLECCIÓN (REPRODUCTOR ORIGINAL INTACTO) -->
   <section id="detail-page" hidden>
     <button class="back-button" onclick="backToCategory()">
       ← Volver al listado
@@ -703,11 +772,45 @@ function showCategory(type) {
     ? "Descubre nuestros álbumes musicales."
     : "Explora nuestras listas de reproducción.";
 
+  // Resetear filtros al entrar a la categoría
+  document.getElementById("filter-style").value = "all";
+  document.getElementById("filter-language").value = "all";
+
+  renderCollectionList();
+}
+
+
+/* PINTAR EL LISTADO DE COLECCIONES APLICANDO FILTROS */
+function renderCollectionList() {
   collectionGrid.innerHTML = "";
+
+  const selectedStyle = document.getElementById("filter-style").value;
+  const selectedLang = document.getElementById("filter-language").value;
 
   const filtered = collections
     .map((collection, index) => ({ collection, index }))
-    .filter(item => item.collection.type === type);
+    .filter(item => {
+      // Filtrar estrictamente por tipo (album/playlist)
+      if (item.collection.type !== currentCategory) return false;
+
+      // Filtrar por estilo si no está en "all"
+      if (selectedStyle !== "all" && item.collection.style !== selectedStyle) {
+        return false;
+      }
+
+      // Filtrar por idioma si no está en "all" (si la colección no tiene idioma guardado, asume 'es')
+      const colLang = item.collection.language || "es";
+      if (selectedLang !== "all" && colLang !== selectedLang) {
+        return false;
+      }
+
+      return true;
+    });
+
+  if (filtered.length === 0) {
+    collectionGrid.innerHTML = `<p style="color: var(--muted); grid-column: 1/-1;">No hay colecciones con los filtros seleccionados.</p>`;
+    return;
+  }
 
   filtered.forEach(item => {
     const collection = item.collection;
@@ -957,7 +1060,7 @@ async function processAndSaveCollection() {
       return;
     }
 
-    // Insertar en Supabase
+    // Insertar en Supabase (Nota: si ya subes el estilo y idioma desde tu admin local, aquí se guardarán por defecto o con la estructura actual)
     const { data, error } = await _supabase
       .from('collections')
       .insert([
