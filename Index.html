@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IKAmusicstudios - Streaming Cloud</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+:root {
+  --bg: #101114;
+  --panel: #1b1d23;
+  --panel2: #252831;
+  --text: #f3f3f5;
+  --muted: #a5a7b0;
+  --accent: #d6a85f;
+  --border: #343740;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+}
+
+header {
+  padding: 35px 20px 28px;
+  text-align: center;
+  background: #15161b;
+  border-bottom: 1px solid var(--border);
+}
+
+header h1 { margin: 0; font-size: 30px; letter-spacing: 4px; }
+header p { color: var(--muted); margin: 10px 0 0; font-size: 12px; letter-spacing: 3px; }
+
+main { max-width: 1150px; margin: auto; padding: 35px 22px 55px; }
+
+.page-title { margin: 0 0 8px; font-size: 25px; }
+.page-description { color: var(--muted); margin: 0 0 28px; font-size: 14px; }
+
+.back-button {
+  display: inline-block; background: transparent; color: var(--accent);
+  border: 1px solid var(--border); padding: 10px 15px; border-radius: 6px;
+  cursor: pointer; margin-bottom: 25px; font-size: 13px;
+}
+.back-button:hover { border-color: var(--accent); }
+
+.category-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+
+.category-card {
+  position: relative; min-height: 270px; overflow: hidden; border-radius: 12px;
+  cursor: pointer; background: var(--panel); border: 1px solid var(--border);
+  display: flex; align-items: end; transition: transform .2s, border-color .2s;
+}
+.category-card:hover { transform: translateY(-4px); border-color: var(--accent); }
+.category-card img { position: absolute; width: 100%; height: 100%; object-fit: cover; inset: 0; opacity: .58; }
+.category-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent, rgba(0,0,0,.9)); }
+.category-content { position: relative; z-index: 1; padding: 25px; }
+.category-content h2 { margin: 0 0 8px; font-size: 29px; letter-spacing: 2px; }
+.category-content p { margin: 0; color: #ddd; font-size: 13px; }
+
+.collection-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 22px; }
+
+.collection-card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 13px; cursor: pointer; transition: transform .2s, border-color .2s;
+}
+.collection-card:hover { transform: translateY(-4px); border-color: var(--accent); }
+.collection-card img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 7px; display: block; }
+.collection-card h3 { margin: 14px 0 6px; font-size: 17px; }
+.collection-card p { color: var(--muted); font-size: 12px; margin: 0; }
+
+.collection-layout { display: grid; grid-template-columns: minmax(280px, .85fr) minmax(320px, 1.15fr); gap: 25px; align-items: start; }
+.collection-info, .player-panel { background: var(--panel); border-radius: 12px; padding: 20px; border: 1px solid var(--border); }
+
+.cover { width: 100%; max-width: 350px; aspect-ratio: 1; object-fit: cover; display: block; margin: 0 auto 20px; border-radius: 9px; }
+.collection-info h2 { text-align: center; margin: 8px 0; font-size: 23px; }
+.author { text-align: center; color: var(--muted); font-size: 13px; margin: 0 0 22px; }
+
+.track-list { display: flex; flex-direction: column; gap: 7px; max-height: 400px; overflow-y: auto; }
+.track {
+  width: 100%; border: 1px solid transparent; border-radius: 7px; padding: 12px;
+  background: var(--panel2); color: var(--text); text-align: left; cursor: pointer;
+  font-size: 14px; display: flex; align-items: center; gap: 10px;
+}
+.track:hover { border-color: var(--accent); }
+.track.active { border-color: var(--accent); background: #34302a; }
+.track-number { color: var(--accent); min-width: 23px; font-size: 12px; }
+
+.player-panel { position: sticky; top: 15px; }
+.player-panel h3 { margin: 0 0 8px; font-size: 19px; }
+.now-playing { color: var(--accent); margin: 0 0 17px; font-size: 14px; min-height: 18px; }
+.player-frame { width: 100%; height: 430px; border: 0; border-radius: 9px; background: #080808; display: block; }
+
+.player-navigation { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; }
+.nav-track {
+  flex: 1; padding: 13px 10px; border: 1px solid var(--border); border-radius: 7px;
+  background: var(--panel2); color: var(--text); cursor: pointer; font-size: 14px;
+}
+.nav-track:hover:not(:disabled) { border-color: var(--accent); background: #34302a; }
+.nav-track:disabled { opacity: .3; cursor: not-allowed; }
+.track-counter { text-align: center; color: var(--muted); font-size: 12px; margin: 13px 0 0; }
+
+footer { text-align: center; color: #777984; font-size: 12px; padding: 22px; border-top: 1px solid var(--border); }
+[hidden] { display: none !important; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>IKAmusicstudios</h1>
+  <p>TU MÚSICA · TUS COLECCIONES (SUPABASE JSON)</p>
+</header>
+
+<main>
+  <!-- PÁGINA PRINCIPAL -->
+  <section id="home-page">
+    <h2 class="page-title">Biblioteca musical</h2>
+    <p class="page-description">Explora nuestros álbumes y playlists sincronizados desde Supabase.</p>
+    <div class="category-grid">
+      <div class="category-card" onclick="showCategory('album')">
+        <img id="album-cover-preview" src="" alt="Álbumes">
+        <div class="category-content">
+          <h2>ÁLBUMES</h2>
+          <p>Álbumes completos y colecciones musicales</p>
+        </div>
+      </div>
+      <div class="category-card" onclick="showCategory('playlist')">
+        <img id="playlist-cover-preview" src="" alt="Playlists">
+        <div class="category-content">
+          <h2>PLAYLISTS</h2>
+          <p>Listas musicales para descubrir y escuchar</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LISTADO DE COLECCIONES -->
+  <section id="category-page" hidden>
+    <button class="back-button" onclick="goHome()">← Volver al inicio</button>
+    <h2 class="page-title" id="category-title"></h2>
+    <p class="page-description" id="category-description"></p>
+    <div class="collection-grid" id="collection-grid"></div>
+  </section>
+
+  <!-- DETALLE DE UNA COLECCIÓN -->
+  <section id="detail-page" hidden>
+    <button class="back-button" onclick="backToCategory()">← Volver al listado</button>
+    <div class="collection-layout">
+      <div class="collection-info">
+        <img class="cover" id="cover" src="" alt="Portada">
+        <h2 id="collection-title"></h2>
+        <p class="author" id="author"></p>
+        <div class="track-list" id="track-list"></div>
+      </div>
+      <div class="player-panel">
+        <h3>Reproductor</h3>
+        <p class="now-playing" id="now-playing">Selecciona una canción</p>
+        <iframe class="player-frame" id="player" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        <div class="player-navigation">
+          <button class="nav-track" id="previous-button" onclick="previousTrack()">← Anterior</button>
+          <button class="nav-track" id="next-button" onclick="nextTrack()">Siguiente →</button>
+        </div>
+        <p class="track-counter" id="track-counter"></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>IKAmusicstudios · Base de datos Supabase</footer>
+
+<script>
+const SUPABASE_URL = 'https://mouvifqcmdlypegtyjfw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_5bqnQQBhY5QRnhGW9p7fuA_C4Y2crZP';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let collectionsCache = [];
+let activeTracks = [];
+let currentTrackIndex = 0;
+let currentCollectionIndex = 0;
+let currentCategory = "album";
+
+const homePage = document.getElementById("home-page");
+const categoryPage = document.getElementById("category-page");
+const detailPage = document.getElementById("detail-page");
+
+async function initApp() {
+  try {
+    const { data, error } = await supabaseClient.from('suno_collections').select('*');
+    if (error) {
+      console.error("Error al cargar de Supabase:", error);
+      return;
+    }
+
+    collectionsCache = data.map(item => {
+      const json = typeof item.json_data === 'string' ? JSON.parse(item.json_data) : item.json_data;
+      
+      const tracksRaw = json.clips || json.tracks || json.playlist_clips || [];
+      const formattedTracks = tracksRaw.map(t => {
+        const clip = t.clip || t;
+        return {
+          name: clip.title || "Sin título",
+          id: clip.id
+        };
+      });
+
+      return {
+        id: item.id,
+        type: item.type,
+        name: json.name || "Sin nombre",
+        author: json.display_name || json.handle || json.user?.display_name || "IKA",
+        cover: json.image_url || json.cover_image_url || "",
+        tracks: formattedTracks
+      };
+    });
+
+    const firstAlbum = collectionsCache.find(c => c.type === 'album');
+    const firstPlaylist = collectionsCache.find(c => c.type === 'playlist');
+    if (firstAlbum) document.getElementById('album-cover-preview').src = firstAlbum.cover;
+    if (firstPlaylist) document.getElementById('playlist-cover-preview').src = firstPlaylist.cover;
+
+  } catch (err) {
+    console.error("Error procesando datos:", err);
+  }
+}
+
+function goHome() {
+  homePage.hidden = false;
+  categoryPage.hidden = true;
+  detailPage.hidden = true;
+  document.getElementById("player").src = "";
+}
+
+function showCategory(type) {
+  currentCategory = type;
+  homePage.hidden = true;
+  categoryPage.hidden = false;
+  detailPage.hidden = true;
+
+  const isAlbum = type === "album";
+  document.getElementById("category-title").textContent = isAlbum ? "Álbumes" : "Playlists";
+  document.getElementById("category-description").textContent = isAlbum ? "Descubre nuestros álbumes musicales." : "Explora nuestras listas de reproducción.";
+
+  const grid = document.getElementById("collection-grid");
+  grid.innerHTML = "";
+
+  const filtered = collectionsCache.filter(c => c.type === type);
+
+  filtered.forEach((collection) => {
+    const realIndex = collectionsCache.indexOf(collection);
+    const card = document.createElement("div");
+    card.className = "collection-card";
+
+    card.innerHTML = `
+      <img src="${collection.cover}" alt="${collection.name}">
+      <h3>${collection.name}</h3>
+      <p>${collection.tracks.length} canciones · ${collection.author}</p>
+    `;
+
+    card.addEventListener("click", () => openCollection(realIndex));
+    grid.appendChild(card);
+  });
+}
+
+function openCollection(index) {
+  currentCollectionIndex = index;
+  currentTrackIndex = 0;
+  homePage.hidden = true;
+  categoryPage.hidden = true;
+  detailPage.hidden = false;
+
+  const collection = collectionsCache[index];
+  activeTracks = collection.tracks;
+
+  document.getElementById("cover").src = collection.cover;
+  document.getElementById("collection-title").textContent = collection.name;
+  document.getElementById("author").textContent = (collection.type === "album" ? "Álbum" : "Playlist") + " · " + collection.author;
+
+  const trackListEl = document.getElementById("track-list");
+  trackListEl.innerHTML = "";
+
+  activeTracks.forEach((track, i) => {
+    const button = document.createElement("button");
+    button.className = "track";
+    button.innerHTML = `
+      <span class="track-number">${String(i + 1).padStart(2, "0")}</span>
+      <span>${track.name}</span>
+    `;
+    button.addEventListener("click", () => playTrack(i));
+    trackListEl.appendChild(button);
+  });
+
+  if (activeTracks.length > 0) {
+    playTrack(0);
+  }
+}
+
+function backToCategory() {
+  document.getElementById("player").src = "";
+  detailPage.hidden = true;
+  categoryPage.hidden = false;
+}
+
+function playTrack(index) {
+  if (index < 0 || index >= activeTracks.length) return;
+
+  const track = activeTracks[index];
+  currentTrackIndex = index;
+
+  document.getElementById("player").src = "https://suno.com/embed/" + track.id;
+  document.getElementById("now-playing").textContent = track.name;
+
+  document.querySelectorAll(".track").forEach((button, i) => {
+    button.classList.toggle("active", i === index);
+  });
+
+  document.getElementById("previous-button").disabled = index === 0;
+  document.getElementById("next-button").disabled = index === activeTracks.length - 1;
+  document.getElementById("track-counter").textContent = "Canción " + (index + 1) + " de " + activeTracks.length;
+}
+
+function previousTrack() {
+  if (currentTrackIndex > 0) playTrack(currentTrackIndex - 1);
+}
+
+function nextTrack() {
+  if (currentTrackIndex < activeTracks.length - 1) playTrack(currentTrackIndex + 1);
+}
+
+initApp();
+</script>
+
+</body>
+</html>
