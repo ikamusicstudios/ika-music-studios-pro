@@ -571,7 +571,7 @@ function showCategory(type) {
     const name = document.createElement("h3");
     name.textContent = collection.name;
 
-    // Asegurarnos de leer bien el array de canciones venga como venga
+    // Obtener las pistas asegurando compatibilidad si vienen como string o array
     let tracksArr = collection.tracks;
     if (typeof tracksArr === 'string') {
       try { tracksArr = JSON.parse(tracksArr); } catch(e) { tracksArr = []; }
@@ -618,6 +618,7 @@ function backToCategory() {
 /* MOSTRAR PORTADA Y CANCIONES */
 function renderCollection() {
   const collection = collections[currentCollection];
+  if (!collection) return;
 
   cover.src = collection.cover;
   cover.alt = "Portada de " + collection.name;
@@ -665,6 +666,8 @@ function renderCollection() {
 /* CARGAR CANCIÓN */
 function playTrack(index) {
   const collection = collections[currentCollection];
+  if (!collection) return;
+
   let tracksArr = collection.tracks;
   if (typeof tracksArr === 'string') {
     try { tracksArr = JSON.parse(tracksArr); } catch(e) { tracksArr = []; }
@@ -703,6 +706,8 @@ function previousTrack() {
 /* CANCIÓN SIGUIENTE */
 function nextTrack() {
   const collection = collections[currentCollection];
+  if (!collection) return;
+
   let tracksArr = collection.tracks;
   if (typeof tracksArr === 'string') {
     try { tracksArr = JSON.parse(tracksArr); } catch(e) { tracksArr = []; }
