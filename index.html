@@ -17,8 +17,6 @@
   --muted: #a5a7b0;
   --accent: #d6a85f;
   --border: #343740;
-  --error: #e74c3c;
-  --success: #2ecc71;
 }
 
 * { box-sizing: border-box; }
@@ -67,7 +65,7 @@ main {
   font-size: 14px;
 }
 
-.back-button, .btn-action {
+.back-button {
   display: inline-block;
   background: transparent;
   color: var(--accent);
@@ -80,24 +78,8 @@ main {
   text-decoration: none;
 }
 
-.back-button:hover, .btn-action:hover {
+.back-button:hover {
   border-color: var(--accent);
-}
-
-.btn-primary {
-  background: var(--accent);
-  color: #101114;
-  font-weight: bold;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: opacity .2s;
-}
-
-.btn-primary:hover {
-  opacity: .9;
 }
 
 .category-grid {
@@ -163,24 +145,28 @@ main {
   font-size: 13px;
 }
 
-/* NUEVA BARRA DE FILTROS EN LA VISTA DE CATEGORÍA */
-.filters-container {
+/* BARRA DE FILTROS DE ESTILO E IDIOMA */
+.filters-bar {
   display: flex;
-  flex-wrap: wrap;
   gap: 15px;
-  align-items: center;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  padding: 15px 20px;
-  border-radius: 10px;
+  flex-wrap: wrap;
   margin-bottom: 25px;
+  background: var(--panel);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
 }
 
 .filter-group {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-group label {
+  font-size: 12px;
   color: var(--muted);
 }
 
@@ -188,7 +174,7 @@ main {
   background: var(--panel2);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 8px 12px;
+  padding: 10px;
   border-radius: 6px;
   font-family: inherit;
   font-size: 13px;
@@ -228,14 +214,26 @@ main {
 }
 
 .collection-card h3 {
-  margin: 14px 0 6px;
-  font-size: 17px;
+  margin: 12px 0 4px;
+  font-size: 16px;
 }
 
-.collection-card p {
-  color: var(--muted);
-  font-size: 12px;
-  margin: 0;
+.collection-meta {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  background: var(--panel2);
+  color: var(--accent);
+  padding: 3px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: bold;
+  border: 1px solid var(--border);
 }
 
 .collection-layout {
@@ -246,8 +244,7 @@ main {
 }
 
 .collection-info,
-.player-panel,
-.admin-card {
+.player-panel {
   background: var(--panel);
   border-radius: 12px;
   padding: 24px;
@@ -375,97 +372,12 @@ main {
   margin: 13px 0 0;
 }
 
-/* ESTILOS PANEL DE ADMIN */
-.admin-section {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: var(--muted);
-}
-
-.form-input, .form-textarea {
-  width: 100%;
-  background: var(--panel2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 12px;
-  border-radius: 6px;
-  font-family: inherit;
-  font-size: 14px;
-}
-
-.form-input:focus, .form-textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.form-textarea {
-  min-height: 140px;
-  resize: vertical;
-}
-
-.admin-step {
-  background: var(--panel2);
-  padding: 16px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  border: 1px solid var(--border);
-}
-
-.admin-step h4 {
-  margin: 0 0 10px;
-  color: var(--accent);
-}
-
-.status-msg {
-  margin-top: 15px;
-  font-size: 14px;
-  padding: 10px;
-  border-radius: 6px;
-  display: none;
-}
-
-.status-msg.error {
-  display: block;
-  background: rgba(231, 76, 60, 0.15);
-  color: var(--error);
-  border: 1px solid var(--error);
-}
-
-.status-msg.success {
-  display: block;
-  background: rgba(46, 204, 113, 0.15);
-  color: var(--success);
-  border: 1px solid var(--success);
-}
-
 footer {
   text-align: center;
   color: #777984;
   font-size: 12px;
   padding: 22px;
   border-top: 1px solid var(--border);
-}
-
-.admin-link {
-  color: var(--muted);
-  text-decoration: none;
-  font-size: 11px;
-  margin-left: 10px;
-  cursor: pointer;
-}
-
-.admin-link:hover {
-  color: var(--accent);
 }
 
 [hidden] {
@@ -515,11 +427,8 @@ footer {
     </p>
 
     <div class="category-grid">
-
       <div class="category-card" onclick="showCategory('album')">
-        <img
-          src="https://cdn2.suno.ai/image_3c4d1042-6bfa-4c60-b7fd-8d928e43828c.jpeg?width=720"
-          alt="Álbumes">
+        <img src="https://cdn2.suno.ai/image_3c4d1042-6bfa-4c60-b7fd-8d928e43828c.jpeg?width=720" alt="Álbumes">
         <div class="category-content">
           <h2>ÁLBUMES</h2>
           <p>Álbumes completos y colecciones musicales</p>
@@ -527,15 +436,12 @@ footer {
       </div>
 
       <div class="category-card" onclick="showCategory('playlist')">
-        <img
-          src="https://cdn2.suno.ai/image_adbb9fd1-b6bf-41c3-9a3e-959fd5edca26.jpeg"
-          alt="Playlists">
+        <img src="https://cdn2.suno.ai/image_adbb9fd1-b6bf-41c3-9a3e-959fd5edca26.jpeg" alt="Playlists">
         <div class="category-content">
           <h2>PLAYLISTS</h2>
           <p>Listas musicales para descubrir y escuchar</p>
         </div>
       </div>
-
     </div>
   </section>
 
@@ -548,10 +454,10 @@ footer {
     <h2 class="page-title" id="category-title"></h2>
     <p class="page-description" id="category-description"></p>
 
-    <!-- BARRA DE FILTROS DE ESTILO E IDIOMA -->
-    <div class="filters-container">
+    <!-- BARRA DE FILTROS (ESTILO E IDIOMA) -->
+    <div class="filters-bar">
       <div class="filter-group">
-        <label for="filter-style">Estilo:</label>
+        <label for="filter-style">Filtrar por Estilo:</label>
         <select id="filter-style" onchange="renderCollectionList()">
           <option value="all">Todos los estilos</option>
           <option value="rock">Rock</option>
@@ -564,7 +470,7 @@ footer {
       </div>
 
       <div class="filter-group">
-        <label for="filter-language">Idioma:</label>
+        <label for="filter-language">Filtrar por Idioma:</label>
         <select id="filter-language" onchange="renderCollectionList()">
           <option value="all">🌐 Todos los idiomas</option>
           <option value="es">Español 🇪🇸</option>
@@ -584,29 +490,23 @@ footer {
     <div class="collection-grid" id="collection-grid"></div>
   </section>
 
-  <!-- DETALLE DE UNA COLECCIÓN (REPRODUCTOR ORIGINAL INTACTO) -->
+  <!-- DETALLE DE UNA COLECCIÓN (REPRODUCTOR INTACTO) -->
   <section id="detail-page" hidden>
     <button class="back-button" onclick="backToCategory()">
       ← Volver al listado
     </button>
 
     <div class="collection-layout">
-
       <div class="collection-info">
         <img class="cover" id="cover" src="" alt="Portada">
-
         <h2 id="collection-title"></h2>
         <p class="author" id="author"></p>
-
         <div class="track-list" id="track-list"></div>
       </div>
 
       <div class="player-panel">
         <h3>Reproductor</h3>
-
-        <p class="now-playing" id="now-playing">
-          Selecciona una canción
-        </p>
+        <p class="now-playing" id="now-playing">Selecciona una canción</p>
 
         <iframe
           class="player-frame"
@@ -618,66 +518,12 @@ footer {
         </iframe>
 
         <div class="player-navigation">
-          <button
-            class="nav-track"
-            id="previous-button"
-            onclick="previousTrack()">
-            ← Anterior
-          </button>
-
-          <button
-            class="nav-track"
-            id="next-button"
-            onclick="nextTrack()">
-            Siguiente →
-          </button>
+          <button class="nav-track" id="previous-button" onclick="previousTrack()">← Anterior</button>
+          <button class="nav-track" id="next-button" onclick="nextTrack()">Siguiente →</button>
         </div>
 
         <p class="track-counter" id="track-counter"></p>
       </div>
-
-    </div>
-  </section>
-
-  <!-- PÁGINA DE ADMINISTRACIÓN -->
-  <section id="admin-page" hidden class="admin-section">
-    <button class="back-button" onclick="goHome()">
-      ← Volver al inicio
-    </button>
-
-    <h2 class="page-title">Panel de Administración</h2>
-    <p class="page-description">Añade nuevos álbumes o playlists directamente desde Suno.</p>
-
-    <div class="admin-card">
-      
-      <!-- PASO 1 -->
-      <div class="admin-step">
-        <h4>Paso 1: Generar enlace al Endpoint de Suno</h4>
-        <div class="form-group">
-          <label for="suno-url">Pega la URL o el ID de la lista/álbum de Suno:</label>
-          <input type="text" id="suno-url" class="form-input" placeholder="Ej: https://suno.com/playlist/f96dccf1-09c1-48f1-b586-b91afe78897d">
-        </div>
-        <button class="btn-action" onclick="generateApiUrl()">Generar Enlace API</button>
-
-        <div id="api-link-box" style="margin-top: 10px; display: none;">
-          <label>Abre esta dirección en Chrome y copia todo el texto JSON:</label><br>
-          <a id="api-endpoint-link" href="#" target="_blank" class="btn-action" style="margin-top: 8px;">Abrir Endpoint en Suno ↗</a>
-        </div>
-      </div>
-
-      <!-- PASO 2 -->
-      <div class="admin-step">
-        <h4>Paso 2: Procesar e Insertar en Supabase</h4>
-        <div class="form-group">
-          <label for="suno-json">Pega el JSON devuelto por Suno:</label>
-          <textarea id="suno-json" class="form-textarea" placeholder="Pega aquí el contenido JSON devuelto por el navegador..."></textarea>
-        </div>
-
-        <button class="btn-primary" onclick="processAndSaveCollection()">Guardar en Supabase</button>
-      </div>
-
-      <div id="admin-status" class="status-msg"></div>
-
     </div>
   </section>
 
@@ -685,17 +531,12 @@ footer {
 
 <footer>
   IKA Music Studios · Reproductores oficiales de Suno
-  <span class="admin-link" onclick="openAdmin()">[Admin]</span>
 </footer>
 
 
 <script>
-/* ==========================================
-   CONFIGURACIÓN Y CARGA DESDE SUPABASE
-   ========================================== */
 const supabaseUrl = 'https://mouvifqcmdlypegtyjfw.supabase.co';
 const supabaseKey = 'sb_publishable_5bqnQQBhY5QRnhGW9p7fuA_C4Y2crZP';
-
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 let collections = [];
@@ -716,12 +557,9 @@ async function initApp() {
   goHome();
 }
 
-
-/* ELEMENTOS DE LA PÁGINA */
 const homePage = document.getElementById("home-page");
 const categoryPage = document.getElementById("category-page");
 const detailPage = document.getElementById("detail-page");
-const adminPage = document.getElementById("admin-page");
 
 const categoryTitle = document.getElementById("category-title");
 const categoryDescription = document.getElementById("category-description");
@@ -738,49 +576,37 @@ const previousButton = document.getElementById("previous-button");
 const nextButton = document.getElementById("next-button");
 const trackCounter = document.getElementById("track-counter");
 
-
-/* ESTADO DE NAVEGACIÓN */
 let currentCategory = "album";
 let currentCollection = 0;
 let currentTrack = 0;
 
-
-/* PÁGINA PRINCIPAL */
 function goHome() {
   homePage.hidden = false;
   categoryPage.hidden = true;
   detailPage.hidden = true;
-  adminPage.hidden = true;
   player.src = "";
 }
 
-
-/* ÁLBUMES O PLAYLISTS */
 function showCategory(type) {
   currentCategory = type;
 
   homePage.hidden = true;
   categoryPage.hidden = false;
   detailPage.hidden = true;
-  adminPage.hidden = true;
 
   const isAlbum = type === "album";
-
   categoryTitle.textContent = isAlbum ? "Álbumes" : "Playlists";
-
   categoryDescription.textContent = isAlbum
     ? "Descubre nuestros álbumes musicales."
     : "Explora nuestras listas de reproducción.";
 
-  // Resetear filtros al entrar a la categoría
+  // Resetear filtros
   document.getElementById("filter-style").value = "all";
   document.getElementById("filter-language").value = "all";
 
   renderCollectionList();
 }
 
-
-/* PINTAR EL LISTADO DE COLECCIONES APLICANDO FILTROS */
 function renderCollectionList() {
   collectionGrid.innerHTML = "";
 
@@ -790,15 +616,12 @@ function renderCollectionList() {
   const filtered = collections
     .map((collection, index) => ({ collection, index }))
     .filter(item => {
-      // Filtrar estrictamente por tipo (album/playlist)
       if (item.collection.type !== currentCategory) return false;
 
-      // Filtrar por estilo si no está en "all"
       if (selectedStyle !== "all" && item.collection.style !== selectedStyle) {
         return false;
       }
 
-      // Filtrar por idioma si no está en "all" (si la colección no tiene idioma guardado, asume 'es')
       const colLang = item.collection.language || "es";
       if (selectedLang !== "all" && colLang !== selectedLang) {
         return false;
@@ -831,12 +654,17 @@ function renderCollectionList() {
     }
     const trackCount = Array.isArray(tracksArr) ? tracksArr.length : 0;
 
-    const info = document.createElement("p");
-    info.textContent = trackCount + " canciones";
+    const meta = document.createElement("div");
+    meta.className = "collection-meta";
+    meta.innerHTML = `
+      <span class="badge">${collection.style || 'rock'}</span>
+      <span class="badge">${(collection.language || 'es').toUpperCase()}</span>
+      <span style="font-size:11px; color:var(--muted); align-self:center; margin-left:auto;">${trackCount} temas</span>
+    `;
 
     card.appendChild(image);
     card.appendChild(name);
-    card.appendChild(info);
+    card.appendChild(meta);
 
     card.addEventListener("click", () => {
       openCollection(item.index);
@@ -846,30 +674,23 @@ function renderCollectionList() {
   });
 }
 
-
-/* ABRIR UNA COLECCIÓN */
 function openCollection(index) {
   currentCollection = index;
   currentTrack = 0;
 
   homePage.hidden = true;
   categoryPage.hidden = true;
-  adminPage.hidden = true;
   detailPage.hidden = false;
 
   renderCollection();
 }
 
-
-/* VOLVER AL LISTADO */
 function backToCategory() {
   player.src = "";
   detailPage.hidden = true;
   categoryPage.hidden = false;
 }
 
-
-/* MOSTRAR PORTADA Y CANCIONES */
 function renderCollection() {
   const collection = collections[currentCollection];
   if (!collection) return;
@@ -878,10 +699,7 @@ function renderCollection() {
   cover.alt = "Portada de " + collection.name;
 
   collectionTitle.textContent = collection.name;
-
-  author.textContent =
-    (collection.type === "album" ? "Álbum" : "Playlist")
-    + " · " + collection.author;
+  author.textContent = (collection.type === "album" ? "Álbum" : "Playlist") + " · " + collection.author;
 
   trackList.innerHTML = "";
 
@@ -916,8 +734,6 @@ function renderCollection() {
   playTrack(0);
 }
 
-
-/* CARGAR CANCIÓN */
 function playTrack(index) {
   const collection = collections[currentCollection];
   if (!collection) return;
@@ -927,9 +743,7 @@ function playTrack(index) {
     try { tracksArr = JSON.parse(tracksArr); } catch(e) { tracksArr = []; }
   }
 
-  if (!Array.isArray(tracksArr) || index < 0 || index >= tracksArr.length) {
-    return;
-  }
+  if (!Array.isArray(tracksArr) || index < 0 || index >= tracksArr.length) return;
 
   const track = tracksArr[index];
   currentTrack = index;
@@ -943,21 +757,13 @@ function playTrack(index) {
 
   previousButton.disabled = index === 0;
   nextButton.disabled = index === tracksArr.length - 1;
-
-  trackCounter.textContent =
-    "Canción " + (index + 1) + " de " + tracksArr.length;
+  trackCounter.textContent = "Canción " + (index + 1) + " de " + tracksArr.length;
 }
 
-
-/* CANCIÓN ANTERIOR */
 function previousTrack() {
-  if (currentTrack > 0) {
-    playTrack(currentTrack - 1);
-  }
+  if (currentTrack > 0) playTrack(currentTrack - 1);
 }
 
-
-/* CANCIÓN SIGUIENTE */
 function nextTrack() {
   const collection = collections[currentCollection];
   if (!collection) return;
@@ -972,139 +778,6 @@ function nextTrack() {
   }
 }
 
-
-/* ==========================================
-   LÓGICA PESTAÑA DE ADMINISTRACIÓN
-   ========================================== */
-function openAdmin() {
-  const password = prompt("Introduce la contraseña de Admin:");
-  if (password === "ika123") {
-    homePage.hidden = true;
-    categoryPage.hidden = true;
-    detailPage.hidden = true;
-    adminPage.hidden = false;
-    
-    // Limpiar formulario y estados
-    document.getElementById("suno-url").value = "";
-    document.getElementById("suno-json").value = "";
-    document.getElementById("api-link-box").style.display = "none";
-    hideStatus();
-  } else if (password !== null) {
-    alert("Contraseña incorrecta");
-  }
-}
-
-function generateApiUrl() {
-  const input = document.getElementById("suno-url").value.trim();
-  hideStatus();
-
-  if (!input) {
-    showStatus("Por favor, introduce una URL o ID de Suno.", "error");
-    return;
-  }
-
-  // Extraer el UUID / ID de la colección de la cadena
-  const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
-  const match = input.match(uuidRegex);
-
-  if (!match) {
-    showStatus("No se ha podido detectar un ID válido en la URL provista.", "error");
-    return;
-  }
-
-  const collectionId = match[0];
-  const apiUrl = `https://suno.com/a/api/playlist/${collectionId}/?page=1`;
-
-  const linkElem = document.getElementById("api-endpoint-link");
-  linkElem.href = apiUrl;
-  document.getElementById("api-link-box").style.display = "block";
-}
-
-async function processAndSaveCollection() {
-  const jsonRaw = document.getElementById("suno-json").value.trim();
-  hideStatus();
-
-  if (!jsonRaw) {
-    showStatus("Pega el JSON devuelto por la API de Suno.", "error");
-    return;
-  }
-
-  try {
-    const sunoData = JSON.parse(jsonRaw);
-
-    // Extraer identificador de la colección
-    const collectionId = sunoData.id || sunoData.playlist_id;
-    if (!collectionId) {
-      showStatus("El JSON pegado no contiene una estructura válida de colección de Suno.", "error");
-      return;
-    }
-
-    // Extraer datos básicos
-    const name = sunoData.name || sunoData.title || "Sin título";
-    const cover = sunoData.image_url || sunoData.avatar_url || "";
-    const author = sunoData.display_name || sunoData.user_display_name || sunoData.handle || "IKA Studios";
-    const type = (sunoData.is_album || sunoData.type === "album") ? "album" : "playlist";
-
-    // Extraer canciones (playlist_clips o clips)
-    const rawClips = sunoData.playlist_clips || sunoData.clips || [];
-    const tracks = rawClips.map(item => {
-      const clip = item.clip || item;
-      return {
-        id: clip.id,
-        name: clip.title || clip.name || "Canción sin título"
-      };
-    }).filter(t => t.id);
-
-    if (tracks.length === 0) {
-      showStatus("No se han encontrado canciones válidas en el JSON.", "error");
-      return;
-    }
-
-    // Insertar en Supabase (Nota: si ya subes el estilo y idioma desde tu admin local, aquí se guardarán por defecto o con la estructura actual)
-    const { data, error } = await _supabase
-      .from('collections')
-      .insert([
-        {
-          id: collectionId,
-          name: name,
-          type: type,
-          author: author,
-          cover: cover,
-          tracks: tracks
-        }
-      ]);
-
-    if (error) {
-      console.error("Error Supabase:", error);
-      showStatus("Error al guardar en Supabase: " + error.message, "error");
-      return;
-    }
-
-    showStatus(`¡Colección "${name}" (${tracks.length} canciones) guardada correctamente en Supabase!`, "success");
-    
-    // Recargar colecciones para que aparezcan al volver al inicio
-    const { data: updated } = await _supabase.from('collections').select('*');
-    if (updated) collections = updated;
-
-  } catch (err) {
-    console.error("Error al procesar JSON:", err);
-    showStatus("Error al leer el texto JSON. Asegúrate de haberlo copiado completo.", "error");
-  }
-}
-
-function showStatus(text, type) {
-  const el = document.getElementById("admin-status");
-  el.textContent = text;
-  el.className = "status-msg " + type;
-}
-
-function hideStatus() {
-  const el = document.getElementById("admin-status");
-  el.className = "status-msg";
-  el.style.display = "none";
-}
-
-/* ARRANCAR APP */
 initApp();
 </script>
 
