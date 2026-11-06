@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IKA Music Studios v2.4</title>
+<title>IKA Music Studios v2.5</title>
 
 <!-- Librería de Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -349,17 +349,31 @@ main {
   position: relative;
 }
 
-/* NUEVO BLOQUE ESCUDO EN CUÑA: Amplio, cubre toda la esquina superior y bloquea clics */
+/* PLACA OFICIAL IKA MUSIC (Tapa por completo la esquina inferior derecha y bloquea clics) */
 .player-shield {
   position: absolute;
-  top: 0;
+  bottom: 0;
   right: 0;
-  width: 110px;
-  height: 90px;
-  background: #111115;
-  clip-path: polygon(100% 0, 0 0, 100% 100%);
+  width: 180px;
+  height: 65px;
+  background: #0c0d10;
+  border-top-left-radius: 8px;
   z-index: 99;
   pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+
+.player-shield span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0.85;
 }
 
 .player-frame {
@@ -550,8 +564,10 @@ footer {
         <p class="now-playing" id="now-playing">Selecciona una canción</p>
 
         <div class="player-container" id="player-container">
-          <!-- El escudo en cuña bloquea la esquina superior -->
-          <div class="player-shield"></div>
+          <!-- Placa oficial de marca IKA MUSIC que tapa el enlace de Suno -->
+          <div class="player-shield">
+            <span>IKA MUSIC</span>
+          </div>
           <iframe
             class="player-frame"
             src=""
