@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IKA Music Studios v2.3</title>
+<title>IKA Music Studios v2.4</title>
 
 <!-- Librería de Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -346,20 +346,20 @@ main {
   border-radius: 9px;
   background: #080808;
   overflow: hidden;
-  position: relative; /* Clave para anclar la pegatina exactamente aquí */
+  position: relative;
 }
 
-/* PEGINA / PARCHE ANTI-ENLACES: Bloquea visual y físicamente la esquina superior derecha */
-.player-container::after {
-  content: "";
+/* NUEVO BLOQUE ESCUDO EN CUÑA: Amplio, cubre toda la esquina superior y bloquea clics */
+.player-shield {
   position: absolute;
   top: 0;
   right: 0;
-  width: 60px;   /* Ancho suficiente para cubrir el icono de la cadena */
-  height: 50px;  /* Alto suficiente */
-  background: #111115; /* Color adaptado al fondo del reproductor de Suno */
-  z-index: 99;   /* Por encima del iframe */
-  pointer-events: auto; /* Bloquea cualquier clic en esa zona */
+  width: 110px;
+  height: 90px;
+  background: #111115;
+  clip-path: polygon(100% 0, 0 0, 100% 100%);
+  z-index: 99;
+  pointer-events: auto;
 }
 
 .player-frame {
@@ -550,7 +550,15 @@ footer {
         <p class="now-playing" id="now-playing">Selecciona una canción</p>
 
         <div class="player-container" id="player-container">
-          <!-- El iframe oficial se genera dinámicamente -->
+          <!-- El escudo en cuña bloquea la esquina superior -->
+          <div class="player-shield"></div>
+          <iframe
+            class="player-frame"
+            src=""
+            title="Reproductor oficial de Suno"
+            allow="autoplay; encrypted-media"
+            allowfullscreen>
+          </iframe>
         </div>
 
         <div class="player-navigation">
@@ -620,7 +628,8 @@ function goHome() {
   homePage.hidden = false;
   categoryPage.hidden = true;
   detailPage.hidden = true;
-  playerContainer.innerHTML = "";
+  const iframe = playerContainer.querySelector("iframe");
+  if (iframe) iframe.src = "";
 }
 
 function showCategory(type) {
@@ -721,7 +730,8 @@ function openCollection(index) {
 }
 
 function backToCategory() {
-  playerContainer.innerHTML = "";
+  const iframe = playerContainer.querySelector("iframe");
+  if (iframe) iframe.src = "";
   detailPage.hidden = true;
   categoryPage.hidden = false;
 }
@@ -785,15 +795,8 @@ function playTrack(index) {
   const track = tracksArr[index];
   currentTrack = index;
 
-  playerContainer.innerHTML = `
-    <iframe
-      class="player-frame"
-      src="https://suno.com/embed/${track.id}?autoplay=1"
-      title="Reproductor oficial de Suno"
-      allow="autoplay; encrypted-media"
-      allowfullscreen>
-    </iframe>
-  `;
+  const iframe = playerContainer.querySelector("iframe");
+  iframe.src = `https://suno.com/embed/${track.id}?autoplay=1`;
 
   nowPlaying.textContent = track.name;
 
