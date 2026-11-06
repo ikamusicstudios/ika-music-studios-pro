@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IKA Music Studios v2.0</title>
+<title>IKA Music Studios v2.1</title>
 
 <!-- Librería de Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -46,6 +46,19 @@ header p {
   margin: 10px 0 0;
   font-size: 12px;
   letter-spacing: 3px;
+}
+
+/* Manifiesto / Reivindicación de la música */
+.manifesto {
+  max-width: 750px;
+  margin: 20px auto 0;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.6;
+  font-style: italic;
+  padding: 0 15px;
+  border-left: 2px solid var(--accent);
+  text-align: left;
 }
 
 main {
@@ -333,6 +346,21 @@ main {
   border-radius: 9px;
   background: #080808;
   overflow: hidden;
+  position: relative;
+}
+
+/* Truco visual limpio para cubrir y ocultar el icono de la cadena de Suno en la esquina superior */
+.player-container::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  background: #121212;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10;
 }
 
 .player-frame {
@@ -421,6 +449,14 @@ footer {
 <header>
   <h1>IKA MUSIC STUDIOS</h1>
   <p>TU MÚSICA · TUS COLECCIONES</p>
+  
+  <div class="manifesto">
+    "La música no es quién la crea, ni cómo se hace. No depende de las manos que la componen, de los instrumentos que la interpretan ni de la tecnología que la hace posible.<br>
+    La música es una sucesión de sonidos que se encuentran, se enlazan y despiertan algo en nosotros.<br>
+    Es emoción, es compañía, es recuerdo, es alegría. Es aquello que te hace detenerte un instante, sonreír, estremecerte o sentirte vivo.<br>
+    Porque, al final, la música no se mide por cómo nace, sino por lo que consigue despertar en quien la escucha.<br>
+    Y si te hace sentir, es música."
+  </div>
 </header>
 
 <main>
@@ -731,7 +767,6 @@ function renderCollection() {
     });
   }
 
-  // Reproducir automáticamente la primera canción al entrar al álbum
   if (tracksArr && tracksArr.length > 0) {
     playTrack(0);
   }
@@ -751,7 +786,6 @@ function playTrack(index) {
   const track = tracksArr[index];
   currentTrack = index;
 
-  // Recreamos el iframe para forzar una carga limpia y directa con autoplay
   playerContainer.innerHTML = `
     <iframe
       class="player-frame"
