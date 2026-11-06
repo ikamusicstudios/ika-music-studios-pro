@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IKA Music Studios v2.5</title>
+<title>IKA Music Studios v2.7</title>
 
 <!-- Librería de Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -349,31 +349,29 @@ main {
   position: relative;
 }
 
-/* PLACA OFICIAL IKA MUSIC (Tapa por completo la esquina inferior derecha y bloquea clics) */
+/* PLACA GIGANTE SUPERIOR DERECHA: Tapa por completo la zona de la cadena y se funde con el reproductor */
 .player-shield {
   position: absolute;
-  bottom: 0;
+  top: 0;
   right: 0;
-  width: 180px;
-  height: 65px;
-  background: #0c0d10;
-  border-top-left-radius: 8px;
+  width: 210px;
+  height: 70px;
+  background: linear-gradient(135deg, #1b2236 0%, #171e30 100%);
+  border-bottom-left-radius: 16px;
   z-index: 99;
   pointer-events: auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-left: 1px solid var(--border);
-  border-top: 1px solid var(--border);
+  box-shadow: -2px 2px 10px rgba(0,0,0,0.3);
 }
 
 .player-shield span {
-  color: var(--muted);
+  color: #cfd3dc;
   font-size: 12px;
   font-weight: bold;
   letter-spacing: 3px;
   text-transform: uppercase;
-  opacity: 0.85;
 }
 
 .player-frame {
@@ -564,7 +562,7 @@ footer {
         <p class="now-playing" id="now-playing">Selecciona una canción</p>
 
         <div class="player-container" id="player-container">
-          <!-- Placa oficial de marca IKA MUSIC que tapa el enlace de Suno -->
+          <!-- Placa de marca IKA MUSIC ampliada para cubrir de sobra la cadena -->
           <div class="player-shield">
             <span>IKA MUSIC</span>
           </div>
