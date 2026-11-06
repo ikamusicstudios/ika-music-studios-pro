@@ -1855,6 +1855,23 @@
 
         // IKA Music shared chat: messages are stored in Supabase and broadcast live.
         const CHAT_NICKNAME_KEY = 'ika_music_chat_nickname';
+        const CHAT_USER_ID_KEY = 'ika_music_chat_user_id';
+
+        // This table requires user_id (UUID), even for visitors without an account.
+        function getChatUserId() {
+            let id = localStorage.getItem(CHAT_USER_ID_KEY);
+            if (id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) return id;
+            if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                id = window.crypto.randomUUID();
+            } else {
+                id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                    const r = Math.random() * 16 | 0;
+                    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+                });
+            }
+            localStorage.setItem(CHAT_USER_ID_KEY, id);
+            return id;
+        }
         const chatRenderedIds = new Set();
         let chatRealtimeChannel = null;
         let chatSending = false;
@@ -1952,8 +1969,8 @@
             chatRenderedIds.clear();
 
             const { data, error } = await _supabase
-                .from('chat_messages')
-                .select('id,nickname,message,created_at')
+                .from('ika_music_chat_messages')
+                .select('id,user_id,nickname,message,created_at')
                 .order('created_at', { ascending: true })
                 .limit(100);
 
@@ -1981,7 +1998,7 @@
                 .on('postgres_changes', {
                     event: 'INSERT',
                     schema: 'public',
-                    table: 'chat_messages'
+                    table: 'ika_music_chat_messages'
                 }, payload => appendChatMessage(payload.new))
                 .subscribe(status => {
                     const online = document.getElementById('chat-online');
@@ -2027,9 +2044,9 @@
             if (sendButton) sendButton.disabled = true;
 
             const { data, error } = await _supabase
-                .from('chat_messages')
-                .insert({ nickname: nick, message: msg })
-                .select('id,nickname,message,created_at')
+                .from('ika_music_chat_messages')
+                .insert({ user_id: getChatUserId(), nickname: nick, message: msg })
+                .select('id,user_id,nickname,message,created_at')
                 .single();
 
             chatSending = false;
