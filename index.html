@@ -356,7 +356,7 @@
         .track-number { color: var(--accent-primary); min-width: 22px; font-size: 0.82rem; font-weight: 800; }
 
         .player-panel { position: sticky; top: 15px; }
-        .player-panel h3 { margin: 0 0 4px; font-size: 1.2rem; color: #fff; font-weight: 800; }
+        .player-panel h3 { margin: 0 0 4px; font-size: 1.2rem; color: #fff; font-weight: 800; }\n.player-panel .player-heading { display: flex; align-items: center; gap: 9px; letter-spacing: 1px; }\n.player-panel .player-heading i { color: var(--accent-primary); font-size: 1.05rem; text-shadow: 0 0 12px rgba(0,240,255,0.45); }
         .now-playing { color: var(--accent-primary); margin: 0 0 14px; font-size: 0.88rem; font-weight: 700; min-height: 18px; }
         
         .player-container {
@@ -364,13 +364,19 @@
             position: relative; border: 2px solid var(--accent-primary); box-shadow: 0 0 30px rgba(0,240,255,0.25);
         }
         
-        /* ESCUDO SUPERIOR DERECHO (IKA MUSIC "ON AIR") */
-        .player-shield-top {
-            position: absolute; top: 0; right: 0; width: 190px; height: 60px;
+        /* ESCUDOS DE MARCA: INTEGRAN VISUALMENTE EL EMBED DE SUNO EN IKA */
+        .player-shield-top,
+        .player-shield-bottom {
+            position: absolute; right: 0;
             background: linear-gradient(135deg, #121423 0%, #05070f 100%);
-            border-bottom-left-radius: 16px; border-left: 2px solid var(--accent-primary); border-bottom: 2px solid var(--accent-primary);
-            z-index: 99; display: flex; align-items: center; justify-content: center; gap: 8px;
-            box-shadow: -2px 2px 12px rgba(0,0,0,0.5);
+            z-index: 99; display: flex; align-items: center; justify-content: center;
+            box-shadow: -2px 2px 12px rgba(0,0,0,0.55);
+            border-color: var(--accent-primary); border-style: solid;
+        }
+        .player-shield-top {
+            top: 0; width: 190px; height: 60px;
+            border-width: 0 0 2px 2px; border-bottom-left-radius: 16px;
+            gap: 8px;
         }
         .on-air-indicator {
             width: 8px; height: 8px; background-color: var(--accent-secondary); border-radius: 50%;
@@ -380,19 +386,20 @@
             0% { opacity: 0.4; transform: scale(0.9); }
             100% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 15px var(--accent-secondary); }
         }
-        .player-shield-top span { color: var(--accent-primary); font-size: 0.72rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 8px rgba(0,240,255,0.6); }
-
-        /* ESCUDO INFERIOR DERECHO (AÑADIR A PLAYLIST) */
-        .player-shield-bottom {
-            position: absolute; bottom: 0; right: 0; width: 210px; height: 50px;
-            background: linear-gradient(135deg, #121423 0%, #05070f 100%);
-            border-top-left-radius: 16px; border-left: 2px solid var(--accent-primary); border-top: 2px solid var(--accent-primary);
-            z-index: 99; display: flex; align-items: center; justify-content: center;
-            box-shadow: -2px -2px 12px rgba(0,0,0,0.5);
+        .player-shield-top span,
+        .player-shield-bottom span {
+            color: var(--accent-primary); font-size: 0.72rem; font-weight: 900;
+            letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 8px rgba(0,240,255,0.6);
         }
+        .player-shield-bottom {
+            bottom: 0; width: 210px; height: 50px;
+            border-width: 2px 0 0 2px; border-top-left-radius: 16px;
+        }
+        /* La acción de playlist queda debajo del embed para no perder funcionalidad */
+        .player-actions { display: flex; justify-content: flex-end; margin-top: 10px; }
         .add-playlist-btn {
             background: rgba(0, 240, 255, 0.12); border: 1px solid var(--accent-primary); color: var(--accent-primary);
-            padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 0.75rem;
+            padding: 7px 14px; border-radius: 20px; font-weight: 800; font-size: 0.75rem;
             display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.25s ease;
         }
         .add-playlist-btn:hover { background: var(--accent-primary); color: #030712; box-shadow: 0 0 20px rgba(0,240,255,0.7); transform: scale(1.03); }
@@ -482,6 +489,10 @@
             .collab-form { grid-template-columns: 1fr; }
             .player-panel { position: static; }
             .player-container { height: 400px; }
+            .player-shield-top { width: 158px; height: 48px; }
+            .player-shield-bottom { width: 176px; height: 42px; }
+            .player-shield-top span, .player-shield-bottom span { font-size: 0.62rem; letter-spacing: 1.5px; }
+            .player-actions { justify-content: center; }
             .scroll-top-btn { left: 50%; transform: translateX(-50%) translateY(100px); }
             .scroll-top-btn.visible { transform: translateX(-50%) translateY(0); }
         }
@@ -637,7 +648,7 @@
                 </div>
 
                 <div class="player-panel">
-                    <h3>Reproductor Suno</h3>
+                    <h3 class="player-heading"><i class="fa-solid fa-headphones"></i> IKA MUSIC PLAYER</h3>
                     <p class="now-playing" id="now-playing">Selecciona una canción</p>
 
                     <div class="player-container" id="player-container">
@@ -647,14 +658,18 @@
                             <span>IKA MUSIC</span>
                         </div>
                         
-                        <!-- ESCUDO INFERIOR CON ACCIÓN DE USUARIO -->
-                        <div class="player-shield-bottom">
-                            <button class="add-playlist-btn" onclick="addToUserPlaylist()">
-                                <i class="fa-solid fa-plus"></i> Añadir a mi Playlist
-                            </button>
+                        <!-- ESCUDO INFERIOR: CUBRE LA ZONA DE MARCA DEL EMBED -->
+                        <div class="player-shield-bottom" aria-label="IKA Music Player">
+                            <span>IKA MUSIC PLAYER</span>
                         </div>
 
-                        <iframe class="player-frame" src="" title="Reproductor Suno" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                        <iframe class="player-frame" src="" title="IKA Music Player" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                    </div>
+
+                    <div class="player-actions">
+                        <button class="add-playlist-btn" onclick="addToUserPlaylist()">
+                            <i class="fa-solid fa-plus"></i> Añadir a mi Playlist
+                        </button>
                     </div>
 
                     <div class="player-navigation">
