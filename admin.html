@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IKA Studios · Gestor Local Admin</title>
+<!-- Librería de Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+// ============================================================
+// MODERACIÓN DEL CHAT (misma instancia Supabase que el gestor)
+// ============================================================
+let chatAdminSession = null;
+let chatBannedUsers = new Set();
+
+function chatSetError(id, message) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = message || "";
+}
+
+function chatEscape(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[ch]));
+}
+
+async function initChatAdmin() {
+  try {
+    const { data, error } = await _supabase.auth.getSession();
+    if (error) throw error;
+    if (data.session) {
+      const allowed = await verifyChatAdmin(data.session);
+      if (allowed) {
+        chatAdminSession = data.session;
+        showChatAdminTools();
+        await loadChatMessages();
+      }
+    }
+  } catch (err) {
+    chatSetError("chat-login-error", "No se pudo comprobar la sesión: " + (err.message || err));
+  }
+}
+
+async function verifyChatAdmin(session) {
+  const { data, error } = await _supabase
+    .from("ika_music_admins")
+    .select("user_id")
+    .eq("user_id", session.user.id)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) {
+    await _supabase.auth.signOut();
+    throw new Error("Esta cuenta no tiene permisos de administrador de chat.");
+  }
+  return true;
+}
+
+async function chatAdminLogin() {
+  chatSetError("chat-login-error", "");
+  const email = document.getElementById("chat-admin-email").value.trim();
+  const password = document.getElementById("chat-admin-password").value;
+  if (!email || !password) {
+    chatSetError("chat-login-error", "Introduce el correo y la contraseña.");
+    return;
+  }
+
+  try {
+    const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    await verifyChatAdmin(data.session);
+    chatAdminSession = data.session;
+    document.getElementById("chat-admin-password").value = "";
+    showChatAdminTools();
+    await loadChatMessages();
+  } catch (err) {
+    chatAdminSession = null;
+    document.getElementById("chat-login").style.display = "block";
+    document.getElementById("chat-tools").style.display = "none";
+    chatSetError("chat-login-error", err.message || "No se pudo iniciar sesión.");
+  }
+}
+
+function showChatAdminTools() {
+  document.getElementById("chat-login").style.display = "none";
+  document.getElementById("chat-tools").style.display = "block";
+  chatSetError("chat-login-error", "");
+}
+
+async function chatAdminLogout() {
+  try {
+    const { error } = await _supabase.auth.signOut();
+    if (error) throw error;
+    chatAdminSession = null;
+    chatBannedUsers.clear();
+    document.getElementById("chat-tools").style.display = "none";
+    document.getElementById("chat-login").style.display = "block";
+    document.getElementById("chat-messages").innerHTML =
+      '<div class="chat-empty">Inicia sesión para cargar los mensajes.</div>';
+  } catch (err) {
+    chatSetError("chat-moderation-error", "Error al cerrar sesión: " + (err.message || err));
+  }
+}
+
+async function loadChatMessages() {
+  if (!chatAdminSession) return;
+  chatSetError("chat-moderation-error", "");
+  const container = document.getElementById("chat-messages");
+  container.innerHTML = '<div class="chat-empty">Cargando mensajes...</div>';
+
+  try {
+    const [{ data: messages, error: messagesError }, { data: bans, error: bansError }] = await Promise.all([
+      _supabase.from("ika_music_chat_messages")
+        .select("id,user_id,nickname,message,created_at,updated_at")
+        .order("created_at", { ascending: false })
+        .limit(100),
+      _supabase.from("ika_music_chat_bans").select("user_id")
+    ]);
+    if (messagesError) throw messagesError;
+    if (bansError) throw bansError;
+
+    chatBannedUsers = new Set((bans || []).map(row => row.user_id));
+    if (!messages || messages.length === 0) {
+      container.innerHTML = '<div class="chat-empty">Todavía no hay mensajes.</div>';
+      return;
+    }
+
+    container.innerHTML = messages.map(msg => {
+      const isBanned = chatBannedUsers.has(msg.user_id);
+      const date = msg.created_at ? new Date(msg.created_at).toLocaleString("es-ES") : "";
+      return `
+        <article class="chat-message ${isBanned ? "banned" : ""}">
+          <div class="chat-message-head">
+            <span><strong>${chatEscape(msg.nickname || "Usuario")}</strong> · ${chatEscape(date)}</span>
+            <span>ID: ${chatEscape(msg.user_id || "sin ID")}</span>
+          </div>
+          <div class="chat-message-text">${chatEscape(msg.message)}</div>
+          <div class="chat-message-actions">
+            <button type="button" class="btn-warning" data-chat-action="edit" data-message-id="${chatEscape(msg.id)}">Editar</button>
+            <button type="button" class="btn-danger" data-chat-action="delete" data-message-id="${chatEscape(msg.id)}">Borrar</button>
+            ${msg.user_id ? `<button type="button" class="${isBanned ? "btn-secondary" : "btn-danger"}" data-chat-action="${isBanned ? "unban" : "ban"}" data-user-id="${chatEscape(msg.user_id)}">${isBanned ? "Desbloquear usuario" : "Bloquear usuario"}</button>` : ""}
+          </div>
+        </article>`;
+    }).join("");
+  } catch (err) {
+    container.innerHTML = '<div class="chat-empty">No se pudieron cargar los mensajes.</div>';
+    chatSetError("chat-moderation-error", "Error de Supabase: " + (err.message || err));
+  }
+}
+
+async function postAsIKA() {
+  if (!chatAdminSession) return;
+  const input = document.getElementById("chat-ika-message");
+  const message = input.value.trim();
+  if (!message) {
+    chatSetError("chat-moderation-error", "Escribe un mensaje antes de publicarlo.");
+    return;
+  }
+  chatSetError("chat-moderation-error", "");
+  try {
+    const { error } = await _supabase.from("ika_music_chat_messages").insert({
+      user_id: chatAdminSession.user.id,
+      nickname: "IKA",
+      message
+    });
+    if (error) throw error;
+    input.value = "";
+    await loadChatMessages();
+  } catch (err) {
+    chatSetError("chat-moderation-error", "No se pudo publicar: " + (err.message || err));
+  }
+}
+
+async function editChatMessage(id) {
+  const article = document.querySelector(`[data-message-id="${CSS.escape(String(id))}"]`)?.closest(".chat-message");
+  const current = article?.querySelector(".chat-message-text")?.textContent || "";
+  const revised = prompt("Modificar mensaje:", current);
+  if (revised === null) return;
+  if (!revised.trim()) {
+    alert("El mensaje no puede quedar vacío. Para quitarlo, utiliza Borrar.");
+    return;
+  }
+  try {
+    const { error } = await _supabase.from("ika_music_chat_messages")
+      .update({ message: revised.trim(), updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) throw error;
+    await loadChatMessages();
+  } catch (err) {
+    chatSetError("chat-moderation-error", "No se pudo editar: " + (err.message || err));
+  }
+}
+
+async function deleteChatMessage(id) {
+  if (!confirm("¿Seguro que quieres borrar este mensaje del chat?")) return;
+  try {
+    const { error } = await _supabase.from("ika_music_chat_messages").delete().eq("id", id);
+    if (error) throw error;
+    await loadChatMessages();
+  } catch (err) {
+    chatSetError("chat-moderation-error", "No se pudo borrar: " + (err.message || err));
+  }
+}
+
+async function setChatBan(userId, shouldBan) {
+  if (!userId || !chatAdminSession) return;
+  const question = shouldBan
+    ? "¿Bloquear a este usuario? No podrá publicar nuevos mensajes."
+    : "¿Desbloquear a este usuario?";
+  if (!confirm(question)) return;
+  try {
+    let result;
+    if (shouldBan) {
+      result = await _supabase.from("ika_music_chat_bans").insert({
+        user_id: userId,
+        banned_by: chatAdminSession.user.id
+      });
+    } else {
+      result = await _supabase.from("ika_music_chat_bans").delete().eq("user_id", userId);
+    }
+    if (result.error) throw result.error;
+    await loadChatMessages();
+  } catch (err) {
+    chatSetError("chat-moderation-error", "No se pudo cambiar el bloqueo: " + (err.message || err));
+  }
+}
+
+document.addEventListener("click", event => {
+  const button = event.target.closest("[data-chat-action]");
+  if (!button) return;
+  const action = button.dataset.chatAction;
+  if (action === "edit") editChatMessage(button.dataset.messageId);
+  if (action === "delete") deleteChatMessage(button.dataset.messageId);
+  if (action === "ban") setChatBan(button.dataset.userId, true);
+  if (action === "unban") setChatBan(button.dataset.userId, false);
+});
+
+</script>
+<style>
+:root {
+  --bg: #101114;
+  --panel: #1b1d23;
+  --panel2: #252831;
+  --text: #f3f3f5;
+  --muted: #a5a7b0;
+  --accent: #d6a85f;
+  --border: #343740;
+  --error: #e74c3c;
+  --success: #2ecc71;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+  padding: 30px;
+}
+.container {
+  max-width: 950px;
+  margin: auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 30px;
+}
+h1, h2 { margin-top: 0; color: var(--accent); }
+h1 { font-size: 24px; }
+h2 { font-size: 18px; margin: 0; }
+.form-group { margin-bottom: 20px; }
+.form-row { display: flex; gap: 15px; }
+.form-row .form-group { flex: 1; }
+label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--muted); }
+input, textarea, select {
+  width: 100%;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+}
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+textarea { min-height: 120px; resize: vertical; }
+button {
+  background: var(--accent);
+  color: #101114;
+  font-weight: bold;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
+button:hover { opacity: .9; }
+.btn-secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--border);
+}
+.btn-warning {
+  background: #f39c12;
+  color: #fff;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+.btn-warning:hover { opacity: .8; }
+.btn-danger {
+  background: var(--error);
+  color: #fff;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+.btn-danger:hover { opacity: .8; }
+.status {
+  margin-top: 20px;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  display: none;
+}
+.status.error { display: block; background: rgba(231, 76, 60, 0.15); color: var(--error); border: 1px solid var(--error); }
+.status.success { display: block; background: rgba(46, 204, 113, 0.15); color: var(--success); border: 1px solid var(--success); }
+
+/* VISTA DE LISTA COMPACTA CON MINIATURA PEQUEÑA */
+.list-container {
+  margin-top: 35px;
+}
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.collection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.list-item {
+  display: flex;
+  align-items: center;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 15px;
+  gap: 15px;
+  transition: border-color 0.2s;
+}
+.list-item:hover {
+  border-color: var(--accent);
+}
+.list-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.list-info {
+  flex: 1;
+  min-width: 0;
+}
+.list-title {
+  font-size: 15px;
+  font-weight: bold;
+  margin: 0 0 5px 0;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.list-badges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: bold;
+  background: rgba(214, 168, 95, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(214, 168, 95, 0.3);
+}
+.badge-type {
+  background: var(--panel);
+  color: var(--muted);
+  border-color: var(--border);
+}
+.badge-lang {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  border-color: var(--border);
+}
+.list-tracks-count {
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: 5px;
+}
+.list-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.list-actions button {
+  margin: 0;
+}
+
+/* MODERACIÓN DEL CHAT */
+.admin-section { margin-top: 35px; padding-top: 25px; border-top: 1px solid var(--border); }
+.admin-section p { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.chat-login, .chat-tools { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-top: 15px; }
+.chat-login { max-width: 520px; }
+.chat-login .form-group { margin-bottom: 12px; }
+.chat-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:15px; }
+.chat-status { color:var(--success); font-size:13px; margin:8px 0 14px; }
+.chat-compose { display:grid; gap:10px; margin-bottom:20px; }
+.chat-compose textarea { min-height:80px; }
+.chat-messages { display:flex; flex-direction:column; gap:10px; }
+.chat-message { border:1px solid var(--border); border-radius:8px; padding:12px; background:var(--panel); }
+.chat-message.banned { border-color:var(--error); }
+.chat-message-head { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; color:var(--muted); font-size:12px; margin-bottom:8px; }
+.chat-message-text { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.45; margin-bottom:10px; }
+.chat-message-actions { display:flex; gap:7px; flex-wrap:wrap; }
+.chat-message-actions button { margin:0; }
+.chat-empty { color:var(--muted); text-align:center; padding:18px; border:1px dashed var(--border); border-radius:8px; }
+.chat-error { color:var(--error); font-size:13px; margin-top:10px; }
+@media (max-width: 650px) {
+  body { padding: 12px; }
+  .container { padding: 18px; }
+  .form-row { flex-direction:column; gap:0; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1 id="form-title">IKA Studios · Gestor Local Admin</h1>
+  
+  <div class="form-group">
+    <label for="suno-url">1. URL / ID de Suno (o ID de la colección):</label>
+    <input type="text" id="suno-url" placeholder="Ej: https://suno.com/album/65055d2a-...">
+    <button class="btn-secondary" style="margin-top: 10px;" onclick="generateLink()">Generar enlace API</button>
+    <div id="link-result" style="margin-top: 10px; font-size: 13px;"></div>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label for="collection-type">Tipo de colección:</label>
+      <select id="collection-type">
+        <option value="album">Álbum</option>
+        <option value="playlist">Playlist</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="collection-style">Estilo musical (Macro-género):</label>
+      <select id="collection-style">
+        <option value="rock">Rock</option>
+        <option value="pop">Pop</option>
+        <option value="flamenco">Flamenco / Rumba</option>
+        <option value="folk">Folk</option>
+        <option value="electronic">Electronic / Dance</option>
+        <option value="balada">Balada / Acústico</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="collection-lang">Idioma principal:</label>
+      <select id="collection-lang">
+        <option value="es">Español 🇪🇸</option>
+        <option value="en">Inglés 🇬🇧</option>
+        <option value="ru">Ruso 🇷🇺</option>
+        <option value="fr">Francés 🇫🇷</option>
+        <option value="it">Italiano 🇮🇹</option>
+        <option value="pt">Portugués 🇵🇹</option>
+        <option value="de">Alemán 🇩🇪</option>
+        <option value="la">Latín / Varios 🌍</option>
+        <option value="other">Otro idioma 🌐</option>
+        <option value="instrumental">Instrumental 🎼</option>
+      </select>
+    </div>
+  </div>
+
+  <hr style="border-color: var(--border); margin: 25px 0;">
+
+  <div class="form-group">
+    <label for="suno-json">2. JSON de Suno (se rellena solo al modificar):</label>
+    <textarea id="suno-json" placeholder="Pega aquí el JSON..."></textarea>
+  </div>
+
+  <button onclick="processAndUpload()">Subir/Guardar Cambios</button>
+  <button class="btn-secondary" onclick="resetForm()">Limpiar formulario 🧹</button>
+
+  <div id="status-msg" class="status"></div>
+
+  <!-- VISTA LISTA COMPACTA DE COLECCIONES -->
+  <div class="list-container">
+    <div class="list-header">
+      <h2>Colecciones en Supabase</h2>
+      <button class="btn-secondary" style="margin: 0;" onclick="loadCollections()">Actualizar 🔄</button>
+    </div>
+    
+    <div class="collection-list" id="catalog-list">
+      <div style="color:var(--muted); padding:15px; text-align:center;">Cargando catálogo...</div>
+    </div>
+  </div>
+
+  <!-- MODERACIÓN DEL CHAT: integrada en este mismo panel de administración -->
+  <section class="admin-section" id="chat-moderation">
+    <h2>Moderación del chat</h2>
+    <p>Acceso reservado a administradores. Desde aquí puedes publicar como IKA, editar o eliminar mensajes y bloquear o desbloquear usuarios. Esta sección no modifica el gestor de canciones, álbumes ni playlists.</p>
+
+    <div class="chat-login" id="chat-login">
+      <h3 style="margin-top:0;">Acceso de moderador</h3>
+      <div class="form-group">
+        <label for="chat-admin-email">Correo del administrador</label>
+        <input type="email" id="chat-admin-email" autocomplete="username" placeholder="Correo de administrador">
+      </div>
+      <div class="form-group">
+        <label for="chat-admin-password">Contraseña</label>
+        <input type="password" id="chat-admin-password" autocomplete="current-password" placeholder="Contraseña">
+      </div>
+      <button type="button" onclick="chatAdminLogin()">Entrar</button>
+      <div id="chat-login-error" class="chat-error" role="alert"></div>
+    </div>
+
+    <div class="chat-tools" id="chat-tools" style="display:none;">
+      <div class="chat-toolbar">
+        <div>
+          <strong>Sesión de moderación activa</strong>
+          <div class="chat-status">Conectado como administrador · Los mensajes públicos se publicarán como IKA.</div>
+        </div>
+        <div>
+          <button type="button" class="btn-secondary" onclick="loadChatMessages()">Actualizar chat 🔄</button>
+          <button type="button" class="btn-secondary" onclick="chatAdminLogout()">Cerrar sesión</button>
+        </div>
+      </div>
+
+      <div class="chat-compose">
+        <label for="chat-ika-message">Publicar un mensaje como IKA</label>
+        <textarea id="chat-ika-message" maxlength="2000" placeholder="Escribe un mensaje para el chat público..."></textarea>
+        <div><button type="button" onclick="postAsIKA()">Publicar como IKA</button></div>
+      </div>
+
+      <h3 style="font-size:16px; margin:20px 0 12px;">Mensajes recientes</h3>
+      <div id="chat-messages" class="chat-messages">
+        <div class="chat-empty">Inicia sesión para cargar los mensajes.</div>
+      </div>
+      <div id="chat-moderation-error" class="chat-error" role="alert"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const supabaseUrl = 'https://mouvifqcmdlypegtyjfw.supabase.co';
+const supabaseKey = 'sb_publishable_5bqnQQBhY5QRnhGW9p7fuA_C4Y2crZP';
+const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+let loadedCollectionsData = [];
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadCollections();
+  initChatAdmin();
+});
+
+function showStatus(text, type) {
+  const el = document.getElementById("status-msg");
+  el.textContent = text;
+  el.className = "status " + type;
+}
+
+function resetForm() {
+  document.getElementById("form-title").textContent = "IKA Studios · Gestor Local Admin";
+  document.getElementById("suno-url").value = "";
+  document.getElementById("suno-json").value = "";
+  document.getElementById("link-result").innerHTML = "";
+  document.getElementById("status-msg").style.display = "none";
+  document.getElementById("collection-type").value = "album";
+  document.getElementById("collection-style").value = "rock";
+  document.getElementById("collection-lang").value = "es";
+  document.getElementById("suno-url").focus();
+}
+
+function generateLink() {
+  const input = document.getElementById("suno-url").value.trim();
+  const resDiv = document.getElementById("link-result");
+  const typeSelect = document.getElementById("collection-type");
+
+  if (!input) {
+    resDiv.innerHTML = "<span style='color:var(--error);'>Por favor, introduce una URL de Suno.</span>";
+    return;
+  }
+
+  const isAlbumUrl = input.includes("/album/");
+  const isPlaylistUrl = input.includes("/playlist/");
+
+  if (isAlbumUrl) typeSelect.value = "album";
+  else if (isPlaylistUrl) typeSelect.value = "playlist";
+
+  const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+  const match = input.match(uuidRegex);
+
+  if (!match) {
+    resDiv.innerHTML = "<span style='color:var(--error);'>No se encontró un ID válido.</span>";
+    return;
+  }
+
+  const endpoint = `https://suno.com/a/api/playlist/${match[0]}/?page=1`;
+  const detectedLabel = isAlbumUrl ? "Álbum detectado" : "Playlist detectada";
+
+  resDiv.innerHTML = `
+    <span style="color:var(--success); display:block; margin-bottom:5px;">✓ ${detectedLabel}</span>
+    Enlace generado: <a href="${endpoint}" target="_blank" style="color:var(--accent);">${endpoint}</a> <br>
+    <small style="color:var(--muted);">Abre el enlace, copia el JSON completo y pégalo abajo.</small>
+  `;
+}
+
+async function processAndUpload() {
+  const jsonRaw = document.getElementById("suno-json").value.trim();
+  const manualType = document.getElementById("collection-type").value;
+  const manualStyle = document.getElementById("collection-style").value;
+  const manualLang = document.getElementById("collection-lang").value;
+
+  if (!jsonRaw) {
+    showStatus("Por favor, pega el JSON de Suno.", "error");
+    return;
+  }
+
+  try {
+    const sunoData = JSON.parse(jsonRaw);
+    const collectionId = sunoData.id || sunoData.playlist_id;
+    
+    if (!collectionId) {
+      showStatus("JSON sin ID válido.", "error");
+      return;
+    }
+
+    const name = sunoData.name || sunoData.title || "Sin título";
+    const cover = sunoData.image_url || sunoData.avatar_url || "";
+    const author = sunoData.display_name || sunoData.user_display_name || sunoData.handle || "IKA Studios";
+    
+    const rawClips = sunoData.playlist_clips || sunoData.clips || [];
+    const tracks = rawClips.map(item => {
+      const clip = item.clip || item;
+      return { id: clip.id, name: clip.title || clip.name || "Sin título" };
+    }).filter(t => t.id);
+
+    if (tracks.length === 0) {
+      showStatus("No se han encontrado canciones en el JSON.", "error");
+      return;
+    }
+
+    const { error } = await _supabase
+      .from('collections')
+      .upsert([
+        {
+          id: collectionId,
+          name: name,
+          type: manualType,
+          style: manualStyle,
+          language: manualLang,
+          author: author,
+          cover: cover,
+          tracks: tracks
+        }
+      ], { onConflict: 'id' });
+
+    if (error) throw error;
+
+    showStatus(`¡Éxito! Colección "${name}" guardada/actualizada.`, "success");
+    resetForm();
+    loadCollections();
+
+  } catch (err) {
+    showStatus("Error al guardar: " + (err.message || err), "error");
+  }
+}
+
+// Cargar catálogo en formato lista con miniatura pequeña
+async function loadCollections() {
+  const listContainer = document.getElementById("catalog-list");
+  try {
+    const { data, error } = await _supabase
+      .from('collections')
+      .select('*')
+      .order('id', { ascending: false });
+
+    if (error) throw error;
+
+    loadedCollectionsData = data || [];
+
+    if (loadedCollectionsData.length === 0) {
+      listContainer.innerHTML = `<div style="color:var(--muted); padding:15px; text-align:center;">No hay colecciones guardadas en Supabase.</div>`;
+      return;
+    }
+
+    listContainer.innerHTML = loadedCollectionsData.map((item, index) => {
+      let tracksArr = item.tracks;
+      if (typeof tracksArr === 'string') {
+        try { tracksArr = JSON.parse(tracksArr); } catch(e) { tracksArr = []; }
+      }
+      const trackCount = Array.isArray(tracksArr) ? tracksArr.length : 0;
+
+      return `
+        <div class="list-item">
+          <img class="list-thumb" src="${item.cover || 'https://via.placeholder.com/48'}" alt="${item.name}">
+          <div class="list-info">
+            <h3 class="list-title">${item.name}</h3>
+            <div class="list-badges">
+              <span class="badge badge-type">${item.type}</span>
+              <span class="badge">${(item.style || 'rock').toUpperCase()}</span>
+              <span class="badge badge-lang">${(item.language || 'es').toUpperCase()}</span>
+              <span class="list-tracks-count">🎵 ${trackCount} temas</span>
+            </div>
+          </div>
+          <div class="list-actions">
+            <button class="btn-warning" onclick="editCollection(${index})">✏️ Modificar</button>
+            <button class="btn-danger" onclick="deleteCollection('${item.id}', '${item.name.replace(/'/g, "\\'")}')">🗑️ Borrar</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    listContainer.innerHTML = `<div style="color:var(--error); padding:15px; text-align:center;">Error al cargar: ${err.message}</div>`;
+  }
+}
+
+// Carga automáticamente los datos de la fila en el formulario superior
+function editCollection(index) {
+  const item = loadedCollectionsData[index];
+  if (!item) return;
+
+  document.getElementById("form-title").textContent = `✏️ Modificando: "${item.name}"`;
+  document.getElementById("collection-type").value = item.type || "album";
+  document.getElementById("collection-style").value = item.style || "rock";
+  document.getElementById("collection-lang").value = item.language || "es";
+  document.getElementById("suno-url").value = item.id;
+
+  let tracksObj = item.tracks;
+  if (typeof tracksObj === 'string') {
+    try { tracksObj = JSON.parse(tracksObj); } catch(e) { tracksObj = []; }
+  }
+
+  const dummyJson = {
+    id: item.id,
+    name: item.name,
+    image_url: item.cover,
+    display_name: item.author,
+    clips: tracksObj.map(t => ({ id: t.id, title: t.name }))
+  };
+
+  document.getElementById("suno-json").value = JSON.stringify(dummyJson, null, 2);
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  showStatus(`Datos de "${item.name}" cargados arriba. Ajusta el estilo o idioma y dale a "Subir/Guardar Cambios".`, "success");
+}
+
+async function deleteCollection(id, name) {
+  if (!confirm(`¿Seguro que quieres borrar "${name}" de Supabase?`)) return;
+
+  try {
+    const { error } = await _supabase
+      .from('collections')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    showStatus(`Colección "${name}" eliminada correctamente.`, "success");
+    loadCollections();
+  } catch (err) {
+    showStatus("Error al borrar: " + err.message, "error");
+  }
+}
+</script>
+
+</body>
+</html>
