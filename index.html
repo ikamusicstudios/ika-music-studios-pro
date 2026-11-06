@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IKA Music Studios</title>
+<title>IKA Music Studios v2.0</title>
 
 <!-- Librería de Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -327,12 +327,18 @@ main {
   min-height: 18px;
 }
 
-.player-frame {
+.player-container {
   width: 100%;
   height: 430px;
-  border: 0;
   border-radius: 9px;
   background: #080808;
+  overflow: hidden;
+}
+
+.player-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
   display: block;
 }
 
@@ -400,7 +406,7 @@ footer {
   .player-panel {
     position: static;
   }
-  .player-frame {
+  .player-container {
     height: 420px;
   }
   header h1 {
@@ -490,7 +496,7 @@ footer {
     <div class="collection-grid" id="collection-grid"></div>
   </section>
 
-  <!-- DETALLE DE UNA COLECCIÓN (REPRODUCTOR INTACTO) -->
+  <!-- DETALLE DE UNA COLECCIÓN (REPRODUCTOR FLUIDO) -->
   <section id="detail-page" hidden>
     <button class="back-button" onclick="backToCategory()">
       ← Volver al listado
@@ -508,14 +514,9 @@ footer {
         <h3>Reproductor</h3>
         <p class="now-playing" id="now-playing">Selecciona una canción</p>
 
-        <iframe
-          class="player-frame"
-          id="player"
-          src=""
-          title="Reproductor oficial de Suno"
-          allow="autoplay; encrypted-media"
-          allowfullscreen>
-        </iframe>
+        <div class="player-container" id="player-container">
+          <!-- El iframe se genera dinámicamente -->
+        </div>
 
         <div class="player-navigation">
           <button class="nav-track" id="previous-button" onclick="previousTrack()">← Anterior</button>
@@ -570,7 +571,7 @@ const collectionTitle = document.getElementById("collection-title");
 const author = document.getElementById("author");
 const trackList = document.getElementById("track-list");
 
-const player = document.getElementById("player");
+const playerContainer = document.getElementById("player-container");
 const nowPlaying = document.getElementById("now-playing");
 const previousButton = document.getElementById("previous-button");
 const nextButton = document.getElementById("next-button");
@@ -584,7 +585,7 @@ function goHome() {
   homePage.hidden = false;
   categoryPage.hidden = true;
   detailPage.hidden = true;
-  player.src = "";
+  playerContainer.innerHTML = "";
 }
 
 function showCategory(type) {
@@ -600,7 +601,6 @@ function showCategory(type) {
     ? "Descubre nuestros álbumes musicales."
     : "Explora nuestras listas de reproducción.";
 
-  // Resetear filtros
   document.getElementById("filter-style").value = "all";
   document.getElementById("filter-language").value = "all";
 
@@ -686,7 +686,7 @@ function openCollection(index) {
 }
 
 function backToCategory() {
-  player.src = "";
+  playerContainer.innerHTML = "";
   detailPage.hidden = true;
   categoryPage.hidden = false;
 }
@@ -731,7 +731,10 @@ function renderCollection() {
     });
   }
 
-  playTrack(0);
+  // Reproducir automáticamente la primera canción al entrar al álbum
+  if (tracksArr && tracksArr.length > 0) {
+    playTrack(0);
+  }
 }
 
 function playTrack(index) {
@@ -748,7 +751,17 @@ function playTrack(index) {
   const track = tracksArr[index];
   currentTrack = index;
 
-  player.src = "https://suno.com/embed/" + track.id;
+  // Recreamos el iframe para forzar una carga limpia y directa con autoplay
+  playerContainer.innerHTML = `
+    <iframe
+      class="player-frame"
+      src="https://suno.com/embed/${track.id}?autoplay=1"
+      title="Reproductor oficial de Suno"
+      allow="autoplay; encrypted-media"
+      allowfullscreen>
+    </iframe>
+  `;
+
   nowPlaying.textContent = track.name;
 
   document.querySelectorAll(".track").forEach((button, i) => {
