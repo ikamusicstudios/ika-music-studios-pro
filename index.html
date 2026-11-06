@@ -356,9 +356,7 @@
         .track-number { color: var(--accent-primary); min-width: 22px; font-size: 0.82rem; font-weight: 800; }
 
         .player-panel { position: sticky; top: 15px; }
-        .player-panel h3 { margin: 0 0 4px; font-size: 1.2rem; color: #fff; font-weight: 800; }
-        .player-panel .player-heading { display: flex; align-items: center; gap: 9px; letter-spacing: 1px; }
-        .player-panel .player-heading i { color: var(--accent-primary); font-size: 1.05rem; text-shadow: 0 0 12px rgba(0,240,255,0.45); }
+        .player-panel h3 { margin: 0 0 4px; font-size: 1.2rem; color: #fff; font-weight: 800; }\n.player-panel .player-heading { display: flex; align-items: center; gap: 9px; letter-spacing: 1px; }\n.player-panel .player-heading i { color: var(--accent-primary); font-size: 1.05rem; text-shadow: 0 0 12px rgba(0,240,255,0.45); }
         .now-playing { color: var(--accent-primary); margin: 0 0 14px; font-size: 0.88rem; font-weight: 700; min-height: 18px; }
         
         .player-container {
@@ -504,7 +502,7 @@
 
     <header>
         <h1>IKA MUSIC STUDIOS</h1>
-        <p class="subtitle">TU MÚSICA · TUS COLECCIONES (v4.7)</p>
+        <p class="subtitle">TU MÚSICA · TUS COLECCIONES</p>
 
         <!-- MANIFIESTO EN CINTA CONTINUA (TICKER) -->
         <div class="manifesto-ticker">
@@ -519,8 +517,12 @@
                 <option value="es" selected>🇪🇸 Español</option>
                 <option value="en">🇬🇧 English</option>
                 <option value="fr">🇫🇷 Français</option>
-                <option value="it">🇮🇹 Italiano</option>
+                <option value="tr">🇹🇷 Türkçe</option>
+                <option value="de">🇩🇪 Deutsch</option>
                 <option value="ru">🇷🇺 Русский</option>
+                <option value="ar">🇸🇦 العربية</option>
+                <option value="zh">🇨🇳 中文</option>
+                <option value="el">🇬🇷 Ελληνικά</option>
             </select>
             <button class="about-btn" onclick="openAboutModal()"><i class="fa-solid fa-circle-info"></i> <span data-i18n="about">Sobre IKA</span></button>
             <button class="contact-btn" onclick="openAccountModal()"><i class="fa-solid fa-user"></i> <span id="account-label">Cuenta</span></button>
@@ -537,7 +539,7 @@
             <div class="search-row">
                 <!-- Buscador por título de canción -->
                 <div class="search-box-container">
-                    <h3><i class="fa-solid fa-magnifying-glass"></i> Buscar Canción</h3>
+                    <h3><i class="fa-solid fa-magnifying-glass"></i> <span data-i18n="Buscar Canción">Buscar Canción</span></h3>
                     <div class="song-search-box">
                         <i class="fa-solid fa-music"></i>
                         <input type="text" id="song-search-input" class="song-search-input" placeholder="Título de canción..." oninput="handleSongSearchInput()">
@@ -548,7 +550,7 @@
 
                 <!-- Buscador directo por Idioma y Estilo -->
                 <div class="search-box-container">
-                    <h3><i class="fa-solid fa-filter"></i> Buscar Álbum / Playlist</h3>
+                    <h3><i class="fa-solid fa-filter"></i> <span data-i18n="Buscar Álbum / Playlist">Buscar Álbum / Playlist</span></h3>
                     <div class="collection-filters-row">
                         <select id="quick-filter-style" class="collection-filter-select" onchange="handleQuickCollectionFilter()">
                             <option value="all">🎸 Todos estilos</option>
@@ -571,16 +573,16 @@
                 </div>
             </div>
 
-            <h2 class="page-title" data-i18n="library">Biblioteca musical</h2>
-            <p class="page-description" data-i18n="libraryDesc">Explora nuestros álbumes y playlists oficiales.</p>
+            <h2 class="page-title" data-i18n="Biblioteca musical">Biblioteca musical</h2>
+            <p class="page-description" data-i18n="Explora nuestros álbumes y playlists oficiales.">Explora nuestros álbumes y playlists oficiales.</p>
 
             <div class="category-grid">
                 <div class="category-card" onclick="showCategory('album')">
                     <img src="https://cdn2.suno.ai/image_3c4d1042-6bfa-4c60-b7fd-8d928e43828c.jpeg?width=720" alt="Álbumes">
                     <div class="category-badge-count" id="album-count-badge">0 Álbumes</div>
                     <div class="category-content">
-                        <h2>ÁLBUMES</h2>
-                        <p>Álbumes completos y colecciones de estudio</p>
+                        <h2 data-i18n="ÁLBUMES">ÁLBUMES</h2>
+                        <p data-i18n="Álbumes completos y colecciones de estudio">Álbumes completos y colecciones de estudio</p>
                     </div>
                 </div>
 
@@ -588,8 +590,8 @@
                     <img src="https://cdn2.suno.ai/image_adbb9fd1-b6bf-41c3-9a3e-959fd5edca26.jpeg" alt="Playlists">
                     <div class="category-badge-count" id="playlist-count-badge">0 Playlists</div>
                     <div class="category-content">
-                        <h2>PLAYLISTS</h2>
-                        <p>Selecciones musicales de Suno para descubrir</p>
+                        <h2 data-i18n="PLAYLISTS">PLAYLISTS</h2>
+                        <p data-i18n="Selecciones musicales de Suno para descubrir">Selecciones musicales de Suno para descubrir</p>
                     </div>
                 </div>
             </div>
@@ -1090,7 +1092,394 @@
         function openAboutModal() { document.getElementById('about-modal').style.display = 'flex'; }
         function openAccountModal() { document.getElementById('account-modal').style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function changeInterfaceLanguage(lang) { document.documentElement.lang = lang; }
+
+        /* SISTEMA DE TRADUCCIÓN POR CLAVES — MISMA ARQUITECTURA QUE ATLASIKA */
+        const interfaceTranslations = {
+          es: {},
+          en: {
+            "Sobre IKA":"About IKA","Cuenta":"Account","Contacto":"Contact","Manifiesto":"Manifesto",
+            "Buscar Canción":"Search Song","Título de canción...":"Song title...","Buscar Álbum / Playlist":"Search Album / Playlist",
+            "Todos estilos":"All styles","Todos idiomas":"All languages","Álbumes":"Albums","Playlists":"Playlists",
+            "Biblioteca musical":"Music Library","Explora nuestros álbumes y playlists oficiales.":"Explore our official albums and playlists.",
+            "Volver al inicio":"Back to Home","Volver al listado":"Back to List","Filtrar por Estilo:":"Filter by Style:",
+            "Todos los estilos":"All styles","Filtrar por Idioma:":"Filter by Language:","Todos los idiomas":"All languages",
+            "No hay colecciones con estos filtros.":"No collections match these filters.","Selecciona una canción":"Select a song",
+            "Añadir a mi Playlist":"Add to My Playlist","Anterior":"Previous","Siguiente":"Next","Reproducir":"Play",
+            "Pausar":"Pause","Aleatorio":"Shuffle","Chat en directo":"Live Chat","Entrar al chat":"Join chat",
+            "Escribe un mensaje...":"Write a message...","Enviar":"Send","Comparte tu canción":"Share your song",
+            "Tu nombre artístico":"Artist name","Título de la canción":"Song title","Estilo / Género":"Style / Genre",
+            "Idioma":"Language","Enlace de la canción en Suno":"Suno song link","Enviar propuesta para revisión":"Submit for review",
+            "Aviso legal":"Legal notice","Privacidad":"Privacy","Condiciones de uso":"Terms of use",
+            "Derechos de autor":"Copyright","Iniciar Sesión":"Sign in","Cerrar":"Close","Guardar":"Save",
+            "Cancelar":"Cancel","Crear cuenta":"Create account","Contraseña":"Password","Correo electrónico":"Email",
+            "Mi cuenta":"My account","Mis Favoritas":"My Favorites","Para el coche":"For the car",
+            "Rock de medianoche":"Midnight Rock","Confirmar y Guardar":"Confirm and Save","Buscar":"Search",
+            "Canción":"Song","Álbum":"Album","Playlist":"Playlist","Ver letra":"View lyrics","Ocultar letra":"Hide lyrics",
+            "Al terminar":"At end","Siguiente canción":"Next song","Repetir canción":"Repeat song",
+            "Volver a todas las canciones":"Back to all songs","Crear playlist":"Create playlist"
+          },
+          fr: {
+            "Sobre IKA":"À propos d’IKA","Cuenta":"Compte","Contacto":"Contact","Manifiesto":"Manifeste",
+            "Buscar Canción":"Rechercher une chanson","Título de canción...":"Titre de la chanson...","Buscar Álbum / Playlist":"Rechercher un album / une playlist",
+            "Todos estilos":"Tous les styles","Todos idiomas":"Toutes les langues","Álbumes":"Albums","Playlists":"Playlists",
+            "Biblioteca musical":"Bibliothèque musicale","Explora nuestros álbumes y playlists oficiales.":"Découvrez nos albums et playlists officiels.",
+            "Volver al inicio":"Retour à l’accueil","Volver al listado":"Retour à la liste","Filtrar por Estilo:":"Filtrer par style :",
+            "Todos los estilos":"Tous les styles","Filtrar por Idioma:":"Filtrer par langue :","Todos los idiomas":"Toutes les langues",
+            "No hay colecciones con estos filtros.":"Aucune collection ne correspond à ces filtres.","Selecciona una canción":"Sélectionnez une chanson",
+            "Añadir a mi Playlist":"Ajouter à ma playlist","Anterior":"Précédent","Siguiente":"Suivant","Reproducir":"Lire",
+            "Pausar":"Pause","Aleatorio":"Aléatoire","Chat en directo":"Chat en direct","Entrar al chat":"Rejoindre le chat",
+            "Escribe un mensaje...":"Écrire un message...","Enviar":"Envoyer","Comparte tu canción":"Partagez votre chanson",
+            "Tu nombre artístico":"Nom d’artiste","Título de la canción":"Titre de la chanson","Estilo / Género":"Style / Genre",
+            "Idioma":"Langue","Enlace de la canción en Suno":"Lien de la chanson Suno","Enviar propuesta para revisión":"Envoyer pour examen",
+            "Aviso legal":"Mentions légales","Privacidad":"Confidentialité","Condiciones de uso":"Conditions d’utilisation",
+            "Derechos de autor":"Droits d’auteur","Iniciar Sesión":"Se connecter","Cerrar":"Fermer","Guardar":"Enregistrer",
+            "Cancelar":"Annuler","Crear cuenta":"Créer un compte","Contraseña":"Mot de passe","Correo electrónico":"E-mail",
+            "Mi cuenta":"Mon compte","Mis Favoritas":"Mes favoris","Para el coche":"Pour la voiture",
+            "Rock de medianoche":"Rock de minuit","Confirmar y Guardar":"Confirmer et enregistrer","Buscar":"Rechercher",
+            "Canción":"Chanson","Álbum":"Album","Playlist":"Playlist","Ver letra":"Voir les paroles","Ocultar letra":"Masquer les paroles",
+            "Al terminar":"À la fin","Siguiente canción":"Chanson suivante","Repetir canción":"Répéter la chanson",
+            "Volver a todas las canciones":"Retour à toutes les chansons","Crear playlist":"Créer une playlist"
+          },
+          tr: {
+            "Sobre IKA":"IKA Hakkında","Cuenta":"Hesap","Contacto":"İletişim","Manifiesto":"Manifesto",
+            "Buscar Canción":"Şarkı Ara","Título de canción...":"Şarkı adı...","Buscar Álbum / Playlist":"Albüm / Liste Ara",
+            "Todos estilos":"Tüm tarzlar","Todos idiomas":"Tüm diller","Álbumes":"Albümler","Playlists":"Çalma Listeleri",
+            "Biblioteca musical":"Müzik Kütüphanesi","Volver al inicio":"Ana Sayfaya Dön","Volver al listado":"Listeye Dön",
+            "Selecciona una canción":"Bir şarkı seçin","Añadir a mi Playlist":"Listeme Ekle","Anterior":"Önceki",
+            "Siguiente":"Sonraki","Reproducir":"Çal","Pausar":"Duraklat","Aleatorio":"Karışık",
+            "Chat en directo":"Canlı Sohbet","Entrar al chat":"Sohbete Katıl","Escribe un mensaje...":"Mesaj yaz...","Enviar":"Gönder",
+            "Comparte tu canción":"Şarkını paylaş","Tu nombre artístico":"Sanatçı adı","Título de la canción":"Şarkı başlığı",
+            "Estilo / Género":"Tarz / Tür","Idioma":"Dil","Enlace de la canción en Suno":"Suno şarkı bağlantısı",
+            "Enviar propuesta para revisión":"İncelemeye gönder","Aviso legal":"Yasal Bildirim","Privacidad":"Gizlilik",
+            "Condiciones de uso":"Kullanım Koşulları","Derechos de autor":"Telif Hakları","Iniciar Sesión":"Giriş Yap",
+            "Cerrar":"Kapat","Guardar":"Kaydet","Cancelar":"İptal","Crear cuenta":"Hesap oluştur",
+            "Contraseña":"Şifre","Correo electrónico":"E-posta","Mi cuenta":"Hesabım","Mis Favoritas":"Favorilerim",
+            "Para el coche":"Araba için","Confirmar y Guardar":"Onayla ve Kaydet","Buscar":"Ara","Canción":"Şarkı",
+            "Álbum":"Albüm","Ver letra":"Şarkı sözlerini gör","Ocultar letra":"Şarkı sözlerini gizle",
+            "Al terminar":"Bittiğinde","Siguiente canción":"Sonraki şarkı","Repetir canción":"Şarkıyı tekrarla",
+            "Volver a todas las canciones":"Tüm şarkılara dön","Crear playlist":"Çalma listesi oluştur"
+          },
+          de: {
+            "Sobre IKA":"Über IKA","Cuenta":"Konto","Contacto":"Kontakt","Manifiesto":"Manifest",
+            "Buscar Canción":"Song suchen","Título de canción...":"Songtitel...","Buscar Álbum / Playlist":"Album / Playlist suchen",
+            "Todos estilos":"Alle Stile","Todos idiomas":"Alle Sprachen","Álbumes":"Alben","Playlists":"Playlists",
+            "Biblioteca musical":"Musikbibliothek","Volver al inicio":"Zur Startseite","Volver al listado":"Zurück zur Liste",
+            "Selecciona una canción":"Song auswählen","Añadir a mi Playlist":"Zu meiner Playlist hinzufügen","Anterior":"Zurück",
+            "Siguiente":"Weiter","Reproducir":"Abspielen","Pausar":"Pause","Aleatorio":"Zufällig",
+            "Chat en directo":"Live-Chat","Entrar al chat":"Chat beitreten","Escribe un mensaje...":"Nachricht schreiben...","Enviar":"Senden",
+            "Comparte tu canción":"Teile deinen Song","Tu nombre artístico":"Künstlername","Título de la canción":"Songtitel",
+            "Estilo / Género":"Stil / Genre","Idioma":"Sprache","Enlace de la canción en Suno":"Suno-Song-Link",
+            "Enviar propuesta para revisión":"Zur Prüfung senden","Aviso legal":"Impressum","Privacidad":"Datenschutz",
+            "Condiciones de uso":"Nutzungsbedingungen","Derechos de autor":"Urheberrecht","Iniciar Sesión":"Anmelden",
+            "Cerrar":"Schließen","Guardar":"Speichern","Cancelar":"Abbrechen","Crear cuenta":"Konto erstellen",
+            "Contraseña":"Passwort","Correo electrónico":"E-Mail","Mi cuenta":"Mein Konto","Mis Favoritas":"Meine Favoriten",
+            "Para el coche":"Fürs Auto","Confirmar y Guardar":"Bestätigen und speichern","Buscar":"Suchen","Canción":"Song",
+            "Álbum":"Album","Ver letra":"Songtext anzeigen","Ocultar letra":"Songtext ausblenden","Al terminar":"Am Ende",
+            "Siguiente canción":"Nächster Song","Repetir canción":"Song wiederholen","Volver a todas las canciones":"Zurück zu allen Songs",
+            "Crear playlist":"Playlist erstellen"
+          },
+          ru: {
+            "Sobre IKA":"Об IKA","Cuenta":"Аккаунт","Contacto":"Контакты","Manifiesto":"Манифест",
+            "Buscar Canción":"Найти песню","Título de canción...":"Название песни...","Buscar Álbum / Playlist":"Найти альбом / плейлист",
+            "Todos estilos":"Все стили","Todos idiomas":"Все языки","Álbumes":"Альбомы","Playlists":"Плейлисты",
+            "Biblioteca musical":"Музыкальная библиотека","Volver al inicio":"На главную","Volver al listado":"Назад к списку",
+            "Selecciona una canción":"Выберите песню","Añadir a mi Playlist":"Добавить в мой плейлист","Anterior":"Назад",
+            "Siguiente":"Далее","Reproducir":"Воспроизвести","Pausar":"Пауза","Aleatorio":"Случайно",
+            "Chat en directo":"Чат","Entrar al chat":"Войти в чат","Escribe un mensaje...":"Напишите сообщение...","Enviar":"Отправить",
+            "Comparte tu canción":"Поделитесь своей песней","Tu nombre artístico":"Имя исполнителя","Título de la canción":"Название песни",
+            "Estilo / Género":"Стиль / Жанр","Idioma":"Язык","Enlace de la canción en Suno":"Ссылка на песню Suno",
+            "Enviar propuesta para revisión":"Отправить на проверку","Aviso legal":"Правовая информация","Privacidad":"Конфиденциальность",
+            "Condiciones de uso":"Условия использования","Derechos de autor":"Авторские права","Iniciar Sesión":"Войти",
+            "Cerrar":"Закрыть","Guardar":"Сохранить","Cancelar":"Отмена","Crear cuenta":"Создать аккаунт",
+            "Contraseña":"Пароль","Correo electrónico":"Электронная почта","Mi cuenta":"Мой аккаунт","Mis Favoritas":"Избранное",
+            "Para el coche":"Для автомобиля","Confirmar y Guardar":"Подтвердить и сохранить","Buscar":"Поиск","Canción":"Песня",
+            "Álbum":"Альбом","Ver letra":"Показать текст","Ocultar letra":"Скрыть текст","Al terminar":"В конце",
+            "Siguiente canción":"Следующая песня","Repetir canción":"Повторить песню","Volver a todas las canciones":"Ко всем песням",
+            "Crear playlist":"Создать плейлист"
+          },
+          ar: {
+            "Sobre IKA":"حول IKA","Cuenta":"الحساب","Contacto":"اتصال","Manifiesto":"بيان",
+            "Buscar Canción":"ابحث عن أغنية","Título de canción...":"عنوان الأغنية...","Buscar Álbum / Playlist":"ابحث عن ألبوم / قائمة",
+            "Todos estilos":"كل الأنماط","Todos idiomas":"كل اللغات","Álbumes":"الألبومات","Playlists":"قوائم التشغيل",
+            "Biblioteca musical":"المكتبة الموسيقية","Volver al inicio":"العودة للرئيسية","Volver al listado":"العودة إلى القائمة",
+            "Selecciona una canción":"اختر أغنية","Añadir a mi Playlist":"أضف إلى قائمتي","Anterior":"السابق",
+            "Siguiente":"التالي","Reproducir":"تشغيل","Pausar":"إيقاف مؤقت","Aleatorio":"عشوائي",
+            "Chat en directo":"دردشة مباشرة","Entrar al chat":"الدخول إلى الدردشة","Escribe un mensaje...":"اكتب رسالة...","Enviar":"إرسال",
+            "Comparte tu canción":"شارك أغنيتك","Tu nombre artístico":"اسم الفنان","Título de la canción":"عنوان الأغنية",
+            "Estilo / Género":"النمط / النوع","Idioma":"اللغة","Enlace de la canción en Suno":"رابط أغنية Suno",
+            "Enviar propuesta para revisión":"إرسال للمراجعة","Aviso legal":"إشعار قانوني","Privacidad":"الخصوصية",
+            "Condiciones de uso":"شروط الاستخدام","Derechos de autor":"حقوق النشر","Iniciar Sesión":"تسجيل الدخول",
+            "Cerrar":"إغلاق","Guardar":"حفظ","Cancelar":"إلغاء","Crear cuenta":"إنشاء حساب",
+            "Contraseña":"كلمة المرور","Correo electrónico":"البريد الإلكتروني","Mi cuenta":"حسابي","Mis Favoritas":"المفضلة",
+            "Para el coche":"للسيارة","Confirmar y Guardar":"تأكيد وحفظ","Buscar":"بحث","Canción":"أغنية",
+            "Álbum":"ألبوم","Ver letra":"عرض الكلمات","Ocultar letra":"إخفاء الكلمات","Al terminar":"عند الانتهاء",
+            "Siguiente canción":"الأغنية التالية","Repetir canción":"تكرار الأغنية","Volver a todas las canciones":"العودة إلى كل الأغاني",
+            "Crear playlist":"إنشاء قائمة تشغيل"
+          },
+          zh: {
+            "Sobre IKA":"关于 IKA","Cuenta":"账户","Contacto":"联系","Manifiesto":"宣言",
+            "Buscar Canción":"搜索歌曲","Título de canción...":"歌曲名称...","Buscar Álbum / Playlist":"搜索专辑 / 播放列表",
+            "Todos estilos":"所有风格","Todos idiomas":"所有语言","Álbumes":"专辑","Playlists":"播放列表",
+            "Biblioteca musical":"音乐库","Volver al inicio":"返回首页","Volver al listado":"返回列表",
+            "Selecciona una canción":"请选择歌曲","Añadir a mi Playlist":"添加到我的播放列表","Anterior":"上一首",
+            "Siguiente":"下一首","Reproducir":"播放","Pausar":"暂停","Aleatorio":"随机播放",
+            "Chat en directo":"实时聊天","Entrar al chat":"进入聊天","Escribe un mensaje...":"输入消息...","Enviar":"发送",
+            "Comparte tu canción":"分享你的歌曲","Tu nombre artístico":"艺名","Título de la canción":"歌曲标题",
+            "Estilo / Género":"风格 / 类型","Idioma":"语言","Enlace de la canción en Suno":"Suno 歌曲链接",
+            "Enviar propuesta para revisión":"提交审核","Aviso legal":"法律声明","Privacidad":"隐私",
+            "Condiciones de uso":"使用条款","Derechos de autor":"版权","Iniciar Sesión":"登录",
+            "Cerrar":"关闭","Guardar":"保存","Cancelar":"取消","Crear cuenta":"创建账户",
+            "Contraseña":"密码","Correo electrónico":"电子邮件","Mi cuenta":"我的账户","Mis Favoritas":"我的收藏",
+            "Para el coche":"车载播放","Confirmar y Guardar":"确认并保存","Buscar":"搜索","Canción":"歌曲",
+            "Álbum":"专辑","Ver letra":"查看歌词","Ocultar letra":"隐藏歌词","Al terminar":"播放结束时",
+            "Siguiente canción":"下一首歌曲","Repetir canción":"重复播放","Volver a todas las canciones":"返回全部歌曲",
+            "Crear playlist":"创建播放列表"
+          },
+          el: {
+            "Sobre IKA":"Σχετικά με το IKA","Cuenta":"Λογαριασμός","Contacto":"Επικοινωνία","Manifiesto":"Μανιφέστο",
+            "Buscar Canción":"Αναζήτηση τραγουδιού","Título de canción...":"Τίτλος τραγουδιού...","Buscar Álbum / Playlist":"Αναζήτηση άλμπουμ / λίστας",
+            "Todos estilos":"Όλα τα είδη","Todos idiomas":"Όλες οι γλώσσες","Álbumes":"Άλμπουμ","Playlists":"Λίστες αναπαραγωγής",
+            "Biblioteca musical":"Μουσική βιβλιοθήκη","Volver al inicio":"Επιστροφή στην αρχική","Volver al listado":"Επιστροφή στη λίστα",
+            "Selecciona una canción":"Επιλέξτε τραγούδι","Añadir a mi Playlist":"Προσθήκη στη λίστα μου","Anterior":"Προηγούμενο",
+            "Siguiente":"Επόμενο","Reproducir":"Αναπαραγωγή","Pausar":"Παύση","Aleatorio":"Τυχαία",
+            "Chat en directo":"Ζωντανή συνομιλία","Entrar al chat":"Είσοδος στη συνομιλία","Escribe un mensaje...":"Γράψτε μήνυμα...","Enviar":"Αποστολή",
+            "Comparte tu canción":"Μοιραστείτε το τραγούδι σας","Tu nombre artístico":"Καλλιτεχνικό όνομα","Título de la canción":"Τίτλος τραγουδιού",
+            "Estilo / Género":"Ύφος / Είδος","Idioma":"Γλώσσα","Enlace de la canción en Suno":"Σύνδεσμος τραγουδιού Suno",
+            "Enviar propuesta para revisión":"Υποβολή για έλεγχο","Aviso legal":"Νομική ειδοποίηση","Privacidad":"Απόρρητο",
+            "Condiciones de uso":"Όροι χρήσης","Derechos de autor":"Πνευματικά δικαιώματα","Iniciar Sesión":"Σύνδεση",
+            "Cerrar":"Κλείσιμο","Guardar":"Αποθήκευση","Cancelar":"Ακύρωση","Crear cuenta":"Δημιουργία λογαριασμού",
+            "Contraseña":"Κωδικός πρόσβασης","Correo electrónico":"Email","Mi cuenta":"Ο λογαριασμός μου","Mis Favoritas":"Τα αγαπημένα μου",
+            "Para el coche":"Για το αυτοκίνητο","Confirmar y Guardar":"Επιβεβαίωση και αποθήκευση","Buscar":"Αναζήτηση","Canción":"Τραγούδι",
+            "Álbum":"Άλμπουμ","Ver letra":"Προβολή στίχων","Ocultar letra":"Απόκρυψη στίχων","Al terminar":"Στο τέλος",
+            "Siguiente canción":"Επόμενο τραγούδι","Repetir canción":"Επανάληψη τραγουδιού","Volver a todas las canciones":"Επιστροφή σε όλα τα τραγούδια",
+            "Crear playlist":"Δημιουργία λίστας"
+          }
+        };
+
+        let interfaceLanguage = localStorage.getItem('ika_music_interface_language') || 'es';
+        function t(key) {
+            const lang = interfaceTranslations[interfaceLanguage] || interfaceTranslations.es;
+            const aliases = {
+                library: 'Biblioteca musical',
+                libraryDesc: 'Explora nuestros álbumes y playlists oficiales.',
+                about: 'Sobre IKA'
+            };
+            const lookup = aliases[key] || key;
+            return lang[lookup] || lookup;
+        }
+
+
+        // Traducciones completas del formulario de comunidad (incluye el título exacto).
+        Object.assign(interfaceTranslations.en, {
+          "Comparte tu canción de Suno":"Share your Suno song",
+          "Nombre artístico":"Artist name",
+          "Tu nombre":"Your name",
+          "Título del tema":"Song title",
+          "Ej. Flamenco Rock":"E.g. Flamenco Rock",
+          "Enlace de la canción en Suno":"Suno song link",
+          "https://suno.com/song/...":"https://suno.com/song/...",
+          "Español":"Spanish","Inglés":"English","Otro":"Other"
+        });
+        Object.assign(interfaceTranslations.fr, {
+          "Comparte tu canción de Suno":"Partagez votre chanson Suno",
+          "Nombre artístico":"Nom d’artiste",
+          "Tu nombre":"Votre nom",
+          "Título del tema":"Titre du morceau",
+          "Ej. Flamenco Rock":"Ex. Flamenco Rock",
+          "Enlace de la canción en Suno":"Lien de la chanson Suno",
+          "Español":"Espagnol","Inglés":"Anglais","Otro":"Autre"
+        });
+        Object.assign(interfaceTranslations.tr, {
+          "Comparte tu canción de Suno":"Suno şarkını paylaş",
+          "Nombre artístico":"Sanatçı adı",
+          "Tu nombre":"Adınız",
+          "Título del tema":"Şarkı başlığı",
+          "Ej. Flamenco Rock":"Örn. Flamenko Rock",
+          "Enlace de la canción en Suno":"Suno şarkı bağlantısı",
+          "Español":"İspanyolca","Inglés":"İngilizce","Otro":"Diğer"
+        });
+        Object.assign(interfaceTranslations.de, {
+          "Comparte tu canción de Suno":"Teile deinen Suno-Song",
+          "Nombre artístico":"Künstlername",
+          "Tu nombre":"Dein Name",
+          "Título del tema":"Songtitel",
+          "Ej. Flamenco Rock":"Z. B. Flamenco Rock",
+          "Enlace de la canción en Suno":"Suno-Song-Link",
+          "Español":"Spanisch","Inglés":"Englisch","Otro":"Andere"
+        });
+        Object.assign(interfaceTranslations.ru, {
+          "Comparte tu canción de Suno":"Поделитесь своей песней Suno",
+          "Nombre artístico":"Имя исполнителя",
+          "Tu nombre":"Ваше имя",
+          "Título del tema":"Название песни",
+          "Ej. Flamenco Rock":"Напр. фламенко-рок",
+          "Enlace de la canción en Suno":"Ссылка на песню Suno",
+          "Español":"Испанский","Inglés":"Английский","Otro":"Другой"
+        });
+        Object.assign(interfaceTranslations.ar, {
+          "Comparte tu canción de Suno":"شارك أغنيتك من Suno",
+          "Nombre artístico":"اسم الفنان",
+          "Tu nombre":"اسمك",
+          "Título del tema":"عنوان الأغنية",
+          "Ej. Flamenco Rock":"مثال: فلامنكو روك",
+          "Enlace de la canción en Suno":"رابط أغنية Suno",
+          "Español":"الإسبانية","Inglés":"الإنجليزية","Otro":"أخرى"
+        });
+        Object.assign(interfaceTranslations.zh, {
+          "Comparte tu canción de Suno":"分享你的 Suno 歌曲",
+          "Nombre artístico":"艺名",
+          "Tu nombre":"你的名字",
+          "Título del tema":"歌曲标题",
+          "Ej. Flamenco Rock":"例如：弗拉门戈摇滚",
+          "Enlace de la canción en Suno":"Suno 歌曲链接",
+          "Español":"西班牙语","Inglés":"英语","Otro":"其他"
+        });
+        Object.assign(interfaceTranslations.el, {
+          "Comparte tu canción de Suno":"Μοιραστείτε το τραγούδι σας από το Suno",
+          "Nombre artístico":"Καλλιτεχνικό όνομα",
+          "Tu nombre":"Το όνομά σας",
+          "Título del tema":"Τίτλος τραγουδιού",
+          "Ej. Flamenco Rock":"Π.χ. Flamenco Rock",
+          "Enlace de la canción en Suno":"Σύνδεσμος τραγουδιού Suno",
+          "Español":"Ισπανικά","Inglés":"Αγγλικά","Otro":"Άλλο"
+        });
+
+
+
+
+
+        // Traducción del texto completo del manifiesto (se conserva el original en español).
+        const manifestoOriginal = '"La música no es quién la crea, ni cómo se hace. No depende de las manos que la componen, de los instrumentos que la interpretan ni de la tecnología que la hace posible. La música es una sucesión de sonidos que se encuentran, se enlazan y despiertan algo en nosotros. Es emoción, compañía, recuerdo y alegría. Si te hace sentir, es música."';
+        const manifestoTranslations = {
+          en: '"Music is not defined by who creates it or how it is made. It does not depend on the hands that compose it, the instruments that perform it, or the technology that makes it possible. Music is a succession of sounds that meet, connect, and awaken something within us. It is emotion, companionship, memory, and joy. If it makes you feel, it is music."',
+          fr: '"La musique ne se définit ni par celui qui la crée ni par la manière dont elle est faite. Elle ne dépend ni des mains qui la composent, ni des instruments qui l’interprètent, ni de la technologie qui la rend possible. La musique est une succession de sons qui se rencontrent, se relient et éveillent quelque chose en nous. C’est une émotion, une présence, un souvenir et une joie. Si elle vous fait ressentir quelque chose, c’est de la musique."',
+          tr: '"Müzik, onu kimin yarattığıyla ya da nasıl yapıldığıyla tanımlanmaz. Onu besteleyen ellere, icra eden enstrümanlara veya mümkün kılan teknolojiye bağlı değildir. Müzik, buluşan, birbirine bağlanan ve içimizde bir şeyleri uyandıran seslerin ardışıklığıdır. Duygu, dostluk, anı ve neşedir. Sana bir şey hissettiriyorsa, o müziktir."',
+          de: '"Musik wird weder dadurch bestimmt, wer sie erschafft, noch dadurch, wie sie entsteht. Sie hängt nicht von den Händen ab, die sie komponieren, den Instrumenten, die sie spielen, oder der Technologie, die sie ermöglicht. Musik ist eine Folge von Klängen, die sich begegnen, verbinden und etwas in uns wecken. Sie ist Gefühl, Gemeinschaft, Erinnerung und Freude. Wenn sie etwas in dir auslöst, ist es Musik."',
+          ru: '"Музыка определяется не тем, кто её создаёт, и не тем, как она создаётся. Она не зависит от рук, которые её сочиняют, инструментов, которые её исполняют, или технологий, которые делают её возможной. Музыка — это последовательность звуков, которые встречаются, соединяются и пробуждают что-то внутри нас. Это эмоции, общение, воспоминания и радость. Если она заставляет вас чувствовать, значит, это музыка."',
+          ar: '"لا تتحدد الموسيقى بمن يبدعها أو بالطريقة التي تُصنع بها. فهي لا تعتمد على الأيدي التي تؤلفها، ولا على الآلات التي تعزفها، ولا على التكنولوجيا التي تجعلها ممكنة. الموسيقى تتابع من الأصوات التي تلتقي وتتصل وتوقظ شيئًا في داخلنا. إنها إحساس ورفقة وذكرى وفرح. إذا جعلتك تشعر، فهي موسيقى."',
+          zh: '"音乐的意义不在于由谁创作，也不在于如何制作。它不依赖于创作它的双手、演奏它的乐器，也不依赖于让它成为可能的技术。音乐是一连串彼此相遇、相互交织并唤醒我们内心某种情感的声音。它是情感、陪伴、回忆与喜悦。如果它能触动你，那就是音乐。"',
+          el: '"Η μουσική δεν ορίζεται από το ποιος τη δημιουργεί ούτε από τον τρόπο με τον οποίο φτιάχνεται. Δεν εξαρτάται από τα χέρια που τη συνθέτουν, τα όργανα που την ερμηνεύουν ή την τεχνολογία που την καθιστά δυνατή. Η μουσική είναι μια ακολουθία ήχων που συναντιούνται, συνδέονται και ξυπνούν κάτι μέσα μας. Είναι συναίσθημα, συντροφιά, ανάμνηση και χαρά. Αν σε κάνει να νιώθεις, είναι μουσική."'
+        };
+        Object.entries(manifestoTranslations).forEach(([code, translated]) => {
+          Object.assign(interfaceTranslations[code], {[manifestoOriginal]: translated});
+        });
+
+        // Traducciones del chat: cabecera, acceso, estado y mensaje inicial.
+        const chatTranslations = {
+          en: {"Chat en directo":"Live Chat","Entrar":"Join","Tu apodo (máx. 25 caracteres)":"Your nickname (max. 25 characters)","3 en línea":"3 online","¡Bienvenidos al chat de IKA Music Studios!":"Welcome to the IKA Music Studios chat!","Oyente":"Listener"},
+          fr: {"Chat en directo":"Chat en direct","Entrar":"Entrer","Tu apodo (máx. 25 caracteres)":"Votre pseudo (25 caractères max.)","3 en línea":"3 en ligne","¡Bienvenidos al chat de IKA Music Studios!":"Bienvenue dans le chat d’IKA Music Studios !","Oyente":"Auditeur"},
+          tr: {"Chat en directo":"Canlı Sohbet","Entrar":"Katıl","Tu apodo (máx. 25 caracteres)":"Takma adınız (en fazla 25 karakter)","3 en línea":"3 kişi çevrimiçi","¡Bienvenidos al chat de IKA Music Studios!":"IKA Music Studios sohbetine hoş geldiniz!","Oyente":"Dinleyici"},
+          de: {"Chat en directo":"Live-Chat","Entrar":"Beitreten","Tu apodo (máx. 25 caracteres)":"Dein Spitzname (max. 25 Zeichen)","3 en línea":"3 online","¡Bienvenidos al chat de IKA Music Studios!":"Willkommen im Chat von IKA Music Studios!","Oyente":"Zuhörer"},
+          ru: {"Chat en directo":"Чат","Entrar":"Войти","Tu apodo (máx. 25 caracteres)":"Ваш псевдоним (до 25 символов)","3 en línea":"В сети: 3","¡Bienvenidos al chat de IKA Music Studios!":"Добро пожаловать в чат IKA Music Studios!","Oyente":"Слушатель"},
+          ar: {"Chat en directo":"الدردشة المباشرة","Entrar":"دخول","Tu apodo (máx. 25 caracteres)":"اسمك المستعار (25 حرفًا كحد أقصى)","3 en línea":"3 متصلون","¡Bienvenidos al chat de IKA Music Studios!":"مرحبًا بكم في دردشة IKA Music Studios!","Oyente":"مستمع"},
+          zh: {"Chat en directo":"实时聊天","Entrar":"进入","Tu apodo (máx. 25 caracteres)":"你的昵称（最多 25 个字符）","3 en línea":"3 人在线","¡Bienvenidos al chat de IKA Music Studios!":"欢迎来到 IKA Music Studios 聊天室！","Oyente":"听众"},
+          el: {"Chat en directo":"Ζωντανή συνομιλία","Entrar":"Είσοδος","Tu apodo (máx. 25 caracteres)":"Το ψευδώνυμό σας (έως 25 χαρακτήρες)","3 en línea":"3 σε σύνδεση","¡Bienvenidos al chat de IKA Music Studios!":"Καλώς ήρθατε στη συνομιλία του IKA Music Studios!","Oyente":"Ακροατής"}
+        };
+        Object.entries(chatTranslations).forEach(([code, entries]) => {
+          Object.assign(interfaceTranslations[code], entries);
+        });
+
+        // Etiquetas de las tarjetas principales de Álbumes y Playlists
+        const categoryCardTranslations = {
+          en: {"ÁLBUMES":"ALBUMS","Álbumes completos y colecciones de estudio":"Complete albums and studio collections","PLAYLISTS":"PLAYLISTS","Selecciones musicales de Suno para descubrir":"Suno music selections to discover","Álbumes":"Albums","Playlists":"Playlists"},
+          fr: {"ÁLBUMES":"ALBUMS","Álbumes completos y colecciones de estudio":"Albums complets et collections studio","PLAYLISTS":"PLAYLISTS","Selecciones musicales de Suno para descubrir":"Sélections musicales Suno à découvrir","Álbumes":"Albums","Playlists":"Playlists"},
+          tr: {"ÁLBUMES":"ALBÜMLER","Álbumes completos y colecciones de estudio":"Tam albümler ve stüdyo koleksiyonları","PLAYLISTS":"ÇALMA LİSTELERİ","Selecciones musicales de Suno para descubrir":"Keşfedilecek Suno müzik seçkileri","Álbumes":"Albümler","Playlists":"Çalma listeleri"},
+          de: {"ÁLBUMES":"ALBEN","Álbumes completos y colecciones de estudio":"Vollständige Alben und Studio-Sammlungen","PLAYLISTS":"PLAYLISTS","Selecciones musicales de Suno para descubrir":"Entdeckenswerte Suno-Musikauswahlen","Álbumes":"Alben","Playlists":"Playlists"},
+          ru: {"ÁLBUMES":"АЛЬБОМЫ","Álbumes completos y colecciones de estudio":"Полные альбомы и студийные коллекции","PLAYLISTS":"ПЛЕЙЛИСТЫ","Selecciones musicales de Suno para descubrir":"Музыкальные подборки Suno для открытия","Álbumes":"Альбомы","Playlists":"Плейлисты"},
+          ar: {"ÁLBUMES":"الألبومات","Álbumes completos y colecciones de estudio":"ألبومات كاملة ومجموعات الاستوديو","PLAYLISTS":"قوائم التشغيل","Selecciones musicales de Suno para descubrir":"اختيارات موسيقية من Suno لاكتشافها","Álbumes":"ألبومات","Playlists":"قوائم التشغيل"},
+          zh: {"ÁLBUMES":"专辑","Álbumes completos y colecciones de estudio":"完整专辑和录音室作品集","PLAYLISTS":"播放列表","Selecciones musicales de Suno para descubrir":"探索 Suno 精选音乐","Álbumes":"专辑","Playlists":"播放列表"},
+          el: {"ÁLBUMES":"ΑΛΜΠΟΥΜ","Álbumes completos y colecciones de estudio":"Ολοκληρωμένα άλμπουμ και συλλογές στούντιο","PLAYLISTS":"ΛΙΣΤΕΣ ΑΝΑΠΑΡΑΓΩΓΗΣ","Selecciones musicales de Suno para descubrir":"Μουσικές επιλογές Suno για ανακάλυψη","Álbumes":"Άλμπουμ","Playlists":"Λίστες αναπαραγωγής"}
+        };
+        Object.entries(categoryCardTranslations).forEach(([code, entries]) => {
+          Object.assign(interfaceTranslations[code], entries);
+        });
+
+        // Traducción del subtítulo principal de la cabecera
+        Object.assign(interfaceTranslations.en, {"TU MÚSICA · TUS COLECCIONES":"YOUR MUSIC · YOUR COLLECTIONS"});
+        Object.assign(interfaceTranslations.fr, {"TU MÚSICA · TUS COLECCIONES":"VOTRE MUSIQUE · VOS COLLECTIONS"});
+        Object.assign(interfaceTranslations.tr, {"TU MÚSICA · TUS COLECCIONES":"MÜZİĞİNİZ · KOLEKSİYONLARINIZ"});
+        Object.assign(interfaceTranslations.de, {"TU MÚSICA · TUS COLECCIONES":"DEINE MUSIK · DEINE SAMMLUNGEN"});
+        Object.assign(interfaceTranslations.ru, {"TU MÚSICA · TUS COLECCIONES":"ВАША МУЗЫКА · ВАШИ КОЛЛЕКЦИИ"});
+        Object.assign(interfaceTranslations.ar, {"TU MÚSICA · TUS COLECCIONES":"موسيقاك · مجموعاتك"});
+        Object.assign(interfaceTranslations.zh, {"TU MÚSICA · TUS COLECCIONES":"你的音乐 · 你的收藏"});
+        Object.assign(interfaceTranslations.el, {"TU MÚSICA · TUS COLECCIONES":"Η ΜΟΥΣΙΚΗ ΣΑΣ · ΟΙ ΣΥΛΛΟΓΕΣ ΣΑΣ"});
+
+        function translateTextNodes(root) {
+            const lang = interfaceTranslations[interfaceLanguage] || interfaceTranslations.es;
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+                acceptNode(node) {
+                    const parent = node.parentElement;
+                    if (!parent || parent.closest('script,style,textarea,option,[contenteditable="true"]')) return NodeFilter.FILTER_REJECT;
+                    const original = node.__ikaOriginalText || node.nodeValue;
+                    return lang[original.trim()] ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                }
+            });
+            const nodes = [];
+            while (walker.nextNode()) nodes.push(walker.currentNode);
+            nodes.forEach(node => {
+                if (node.__ikaOriginalText === undefined) node.__ikaOriginalText = node.nodeValue;
+                const original = node.__ikaOriginalText;
+                const leading = (original.match(/^\s*/) || [''])[0];
+                const trailing = (original.match(/\s*$/) || [''])[0];
+                const key = original.trim();
+                node.nodeValue = interfaceLanguage === 'es' ? original : leading + (lang[key] || key) + trailing;
+            });
+        }
+
+        function applyInterfaceLanguage() {
+            document.documentElement.lang = interfaceLanguage;
+            document.documentElement.dir = interfaceLanguage === 'ar' ? 'rtl' : 'ltr';
+            const lang = interfaceTranslations[interfaceLanguage] || interfaceTranslations.es;
+
+            // Translate explicitly keyed interface labels, preserving their icons and markup.
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                if (!el.dataset.i18nSource) el.dataset.i18nSource = el.textContent.trim();
+                const original = el.dataset.i18nSource;
+                el.textContent = interfaceLanguage === 'es' ? original : (lang[key] || t(key));
+            });
+
+            // Translate matching text nodes without replacing parent HTML or icons.
+            translateTextNodes(document.body);
+
+            document.querySelectorAll('select option').forEach(el => {
+                if (el.dataset.i18nSource === undefined) el.dataset.i18nSource = el.textContent.trim();
+                const original = el.dataset.i18nSource;
+                el.textContent = interfaceLanguage === 'es' ? original : (lang[original] || original);
+            });
+            document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
+                if (el.dataset.i18nPlaceholder === undefined) el.dataset.i18nPlaceholder = el.getAttribute('placeholder') || '';
+                const original = el.dataset.i18nPlaceholder;
+                el.placeholder = interfaceLanguage === 'es' ? original : (lang[original] || original);
+            });
+            document.querySelectorAll('[title]').forEach(el => {
+                if (el.dataset.i18nTitle === undefined) el.dataset.i18nTitle = el.getAttribute('title') || '';
+                const original = el.dataset.i18nTitle;
+                if (lang[original]) el.title = interfaceLanguage === 'es' ? original : lang[original];
+            });
+            const selector = document.getElementById('ui-language-selector');
+            if (selector && selector.value !== interfaceLanguage) selector.value = interfaceLanguage;
+        }
+
+        function changeInterfaceLanguage(lang) {
+            interfaceLanguage = interfaceTranslations[lang] ? lang : 'es';
+            localStorage.setItem('ika_music_interface_language', interfaceLanguage);
+            applyInterfaceLanguage();
+        }
+
+        // Keep newly rendered interface labels translated, without touching song or album titles.
+        let interfaceTranslationObserver = null;
+        function observeInterfaceTranslations() {
+            if (interfaceTranslationObserver) interfaceTranslationObserver.disconnect();
+            interfaceTranslationObserver = new MutationObserver(records => {
+                records.forEach(record => record.addedNodes.forEach(node => {
+                    if (node.nodeType === Node.ELEMENT_NODE) translateTextNodes(node);
+                    else if (node.nodeType === Node.TEXT_NODE) translateTextNodes(node.parentElement || document.body);
+                }));
+            });
+            interfaceTranslationObserver.observe(document.body, { childList: true, subtree: true });
+        }
+
 
         function openLegalModal(type) {
             const titles = { notice: 'Aviso legal', privacy: 'Política de privacidad', terms: 'Condiciones de uso', copyright: 'Derechos de autor' };
@@ -1128,6 +1517,8 @@
         }
 
         initApp();
+        applyInterfaceLanguage();
+        observeInterfaceTranslations();
     </script>
 </body>
 </html>
