@@ -753,14 +753,13 @@
 
         <!-- CHAT EN DIRECTO -->
         <section class="community-section">
-            <h2><i class="fa-solid fa-comments"></i> Chat en directo <span class="chat-online" id="chat-online">3 en línea</span></h2>
+            <h2><i class="fa-solid fa-comments"></i> Chat en directo <span class="chat-online" id="chat-online">Conectando...</span></h2>
             <div class="chat-login">
                 <input id="chat-nickname" type="text" maxlength="25" placeholder="Tu apodo (máx. 25 caracteres)">
                 <button class="btn-primary" onclick="saveNickname()">Entrar</button>
             </div>
-            <div class="chat-messages" id="chat-messages">
-                <div class="chat-message"><div class="chat-message-meta"><span class="chat-message-author">IKA Bot</span></div><div class="chat-message-body">¡Bienvenidos al chat de IKA Music Studios!</div></div>
-            </div>
+            <div class="chat-messages" id="chat-messages" aria-live="polite"></div>
+            <p id="chat-status" role="status" style="margin-top:7px;color:var(--text-muted);font-size:.78rem;"></p>
             <div class="chat-compose">
                 <textarea id="chat-input" placeholder="Escribe un mensaje..."></textarea>
                 <button class="btn-primary" onclick="sendChatMessage()">Enviar</button>
@@ -1852,21 +1851,217 @@
             document.getElementById('legal-modal').style.display = 'flex';
         }
 
-        function saveNickname() {
-            const nick = document.getElementById('chat-nickname').value.trim();
-            if (nick) alert('Apodo guardado: ' + nick);
+        // IKA Music shared chat: messages are stored in Supabase and broadcast live.
+        const CHAT_NICKNAME_KEY = 'ika_music_chat_nickname';
+        const chatRenderedIds = new Set();
+        let chatRealtimeChannel = null;
+        let chatSending = false;
+
+        function normalizeChatNickname(value) {
+            return String(value || '')
+                .normalize('NFKD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '');
         }
 
-        function sendChatMessage() {
-            const input = document.getElementById('chat-input');
-            const msg = input.value.trim();
-            if (!msg) return;
+        function isReservedChatNickname(value) {
+            const normalized = normalizeChatNickname(value);
+            return normalized === 'ika' ||
+                   normalized === 'atlasika' ||
+                   normalized === 'ikamusic' ||
+                   /(^|[^a-z0-9])ika([^a-z0-9]|$)/i.test(String(value || ''));
+        }
+
+        function setChatStatus(message, isError = false) {
+            const status = document.getElementById('chat-status');
+            if (status) {
+                status.textContent = message || '';
+                status.style.color = isError ? '#ff7f9f' : 'var(--text-muted)';
+            }
+        }
+
+        function saveNickname() {
+            const input = document.getElementById('chat-nickname');
+            const nick = input.value.trim();
+
+            if (!nick) {
+                setChatStatus('Escribe un apodo antes de entrar.', true);
+                input.focus();
+                return false;
+            }
+            if (nick.length > 25) {
+                setChatStatus('El apodo no puede superar 25 caracteres.', true);
+                input.focus();
+                return false;
+            }
+            if (isReservedChatNickname(nick)) {
+                setChatStatus('Ese apodo está reservado. Elige otro nombre.', true);
+                input.focus();
+                return false;
+            }
+
+            localStorage.setItem(CHAT_NICKNAME_KEY, nick);
+            setChatStatus('Apodo guardado. Ya puedes participar en el chat.');
+            return true;
+        }
+
+        function appendChatMessage(row) {
+            if (!row || row.id == null || chatRenderedIds.has(String(row.id))) return;
+
             const messages = document.getElementById('chat-messages');
-            const nick = document.getElementById('chat-nickname').value.trim() || 'Oyente';
-            messages.innerHTML += `<div class="chat-message own"><div class="chat-message-meta"><span class="chat-message-author">${nick}</span></div><div class="chat-message-body">${msg}</div></div>`;
-            input.value = '';
+            const currentNick = localStorage.getItem(CHAT_NICKNAME_KEY) || '';
+            const item = document.createElement('div');
+            item.className = 'chat-message' +
+                (String(row.nickname || '') === currentNick ? ' own' : '');
+            item.dataset.messageId = String(row.id);
+
+            const meta = document.createElement('div');
+            meta.className = 'chat-message-meta';
+
+            const author = document.createElement('span');
+            author.className = 'chat-message-author';
+            author.textContent = String(row.nickname || 'Oyente');
+            meta.appendChild(author);
+
+            if (row.created_at) {
+                const time = document.createElement('span');
+                const date = new Date(row.created_at);
+                if (!Number.isNaN(date.getTime())) {
+                    time.textContent = date.toLocaleString();
+                    time.title = date.toISOString();
+                    meta.appendChild(time);
+                }
+            }
+
+            const body = document.createElement('div');
+            body.className = 'chat-message-body';
+            body.textContent = String(row.message || '');
+
+            item.append(meta, body);
+            messages.appendChild(item);
+            chatRenderedIds.add(String(row.id));
             messages.scrollTop = messages.scrollHeight;
         }
+
+        async function loadChatMessages() {
+            const messages = document.getElementById('chat-messages');
+            messages.replaceChildren();
+            chatRenderedIds.clear();
+
+            const { data, error } = await _supabase
+                .from('chat_messages')
+                .select('id,nickname,message,created_at')
+                .order('created_at', { ascending: true })
+                .limit(100);
+
+            if (error) {
+                console.error('IKA chat load error:', error);
+                setChatStatus('No se pudieron cargar los mensajes. Comprueba la tabla y los permisos de Supabase.', true);
+                return;
+            }
+
+            (data || []).forEach(appendChatMessage);
+            if (!data || data.length === 0) {
+                setChatStatus('Todavía no hay mensajes. ¡Sé el primero en escribir!');
+            } else {
+                setChatStatus('Mensajes compartidos activados.');
+            }
+        }
+
+        function subscribeToChatMessages() {
+            if (chatRealtimeChannel) {
+                _supabase.removeChannel(chatRealtimeChannel);
+            }
+
+            chatRealtimeChannel = _supabase
+                .channel('ika-music-public-chat')
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'chat_messages'
+                }, payload => appendChatMessage(payload.new))
+                .subscribe(status => {
+                    const online = document.getElementById('chat-online');
+                    if (status === 'SUBSCRIBED') {
+                        if (online) online.textContent = 'Chat conectado';
+                        setChatStatus('Chat en directo conectado.');
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                        if (online) online.textContent = 'Sin conexión';
+                        setChatStatus('No se pudo conectar el chat en tiempo real. Revisa Realtime en Supabase.', true);
+                    } else if (status === 'CLOSED') {
+                        if (online) online.textContent = 'Desconectado';
+                    }
+                });
+        }
+
+        async function sendChatMessage() {
+            if (chatSending) return;
+
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            const nickInput = document.getElementById('chat-nickname');
+            let nick = nickInput.value.trim() || localStorage.getItem(CHAT_NICKNAME_KEY) || '';
+
+            if (!nick) {
+                setChatStatus('Primero escribe tu apodo y pulsa Entrar.', true);
+                nickInput.focus();
+                return;
+            }
+            if (isReservedChatNickname(nick)) {
+                setChatStatus('Ese apodo está reservado. No puedes usar AtlasIKA, IKA ni IKA Music.', true);
+                nickInput.focus();
+                return;
+            }
+            if (!msg) return;
+            if (msg.length > 1000) {
+                setChatStatus('El mensaje no puede superar 1000 caracteres.', true);
+                return;
+            }
+
+            localStorage.setItem(CHAT_NICKNAME_KEY, nick);
+            chatSending = true;
+            const sendButton = document.querySelector('.chat-compose .btn-primary');
+            if (sendButton) sendButton.disabled = true;
+
+            const { data, error } = await _supabase
+                .from('chat_messages')
+                .insert({ nickname: nick, message: msg })
+                .select('id,nickname,message,created_at')
+                .single();
+
+            chatSending = false;
+            if (sendButton) sendButton.disabled = false;
+
+            if (error) {
+                console.error('IKA chat send error:', error);
+                const detail = /row-level security|policy/i.test(error.message || '')
+                    ? 'Supabase ha rechazado el mensaje por sus políticas de seguridad.'
+                    : 'No se pudo enviar el mensaje. Comprueba la conexión con Supabase.';
+                setChatStatus(detail, true);
+                return;
+            }
+
+            // Render the returned row immediately; the realtime event is de-duplicated by ID.
+            appendChatMessage(data);
+            input.value = '';
+            setChatStatus('Mensaje enviado.');
+        }
+
+        // Restore the visitor's nickname and start shared chat on page load.
+        const savedChatNickname = localStorage.getItem(CHAT_NICKNAME_KEY);
+        if (savedChatNickname && !isReservedChatNickname(savedChatNickname)) {
+            document.getElementById('chat-nickname').value = savedChatNickname;
+        }
+        loadChatMessages();
+        subscribeToChatMessages();
+
+        document.getElementById('chat-input').addEventListener('keydown', event => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendChatMessage();
+            }
+        });
 
         function submitCollabSong(e) {
             e.preventDefault();
