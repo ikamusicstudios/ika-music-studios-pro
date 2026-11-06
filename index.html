@@ -1750,11 +1750,40 @@
             // Translate matching text nodes without replacing parent HTML or icons.
             translateTextNodes(document.body);
 
+            // Translate filter options by their stable VALUE, not by their visible
+            // text. This prevents a previously translated label from becoming the
+            // source text on the next language change. It covers all 11 UI languages.
+            const filterOptionKeys = {
+                'filter-language': {
+                    all: '🌐 Todos los idiomas', es: 'Español 🇪🇸', en: 'Inglés 🇬🇧',
+                    ru: 'Ruso 🇷🇺', fr: 'Francés 🇫🇷', de: 'Alemán 🇩🇪', ar: 'Árabe 🇸🇦',
+                    zh: 'Chino 🇨🇳', el: 'Griego 🇬🇷', tr: 'Turco 🇹🇷', it: 'Italiano 🇮🇹',
+                    ja: 'Japonés 🇯🇵', other: 'Otros', instrumental: 'Instrumental 🎼'
+                },
+                'filter-style': {
+                    all: 'Todos los estilos', rock: 'Rock', pop: 'Pop', flamenco: 'Flamenco / Rumba',
+                    folk: 'Folk', electronic: 'Electronic / Dance', balada: 'Baladas / Acústico',
+                    'summer-vibes': 'Summer Vibes', bachata: 'Bachata', ranchera: 'Ranchera 🇲🇽',
+                    multigenre: 'Multigénero'
+                }
+            };
             document.querySelectorAll('select option').forEach(el => {
+                const selectId = el.closest('select')?.id;
+                const stableKey = filterOptionKeys[selectId]?.[el.value];
+                if (stableKey) {
+                    const sourceLabel = stableKey;
+                    const translated = (filterOptionTranslations[interfaceLanguage] || {})[sourceLabel]
+                        || (filterUiTranslations[interfaceLanguage] || {})[sourceLabel]
+                        || sourceLabel;
+                    el.textContent = interfaceLanguage === 'es' ? sourceLabel : translated;
+                    return;
+                }
+
+                // Other selects retain their original Spanish/source label and use
+                // the regular dictionaries where a translation is available.
                 if (el.dataset.i18nSource === undefined) el.dataset.i18nSource = el.textContent.trim();
                 const original = el.dataset.i18nSource;
                 const normalized = original.replace(/\s+/g, ' ').trim();
-                // Remove emoji/flags only for dictionary lookup; keep them in the visible option.
                 const cleanLabel = Array.from(normalized).filter(ch => {
                     const cp = ch.codePointAt(0);
                     return !(cp >= 0x1F000 && cp <= 0x1FAFF)
@@ -1763,17 +1792,7 @@
                 }).join('').trim();
                 const translatedLabel = (filterUiTranslations[interfaceLanguage] || {})[cleanLabel]
                     || lang[cleanLabel] || lang[normalized] || null;
-                if (interfaceLanguage === 'es') {
-                    el.textContent = original;
-                } else if (translatedLabel) {
-                    const leadingIcon = ['🌐', '🎸', '🎼'].find(icon => normalized.startsWith(icon)) || '';
-                    const flag = ['🇪🇸','🇬🇧','🇷🇺','🇫🇷','🇩🇪','🇸🇦','🇨🇳','🇬🇷','🇹🇷','🇮🇹','🇯🇵'].find(item => normalized.includes(item)) || '';
-                    const trailingIcon = normalized.endsWith('🎼') ? ' 🎼' : '';
-                    el.textContent = (leadingIcon ? leadingIcon + ' ' : '') + translatedLabel
-                        + (flag ? ' ' + flag : trailingIcon);
-                } else {
-                    el.textContent = original;
-                }
+                el.textContent = interfaceLanguage === 'es' ? original : (translatedLabel || original);
             });
             document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
                 if (el.dataset.i18nPlaceholder === undefined) el.dataset.i18nPlaceholder = el.getAttribute('placeholder') || '';
