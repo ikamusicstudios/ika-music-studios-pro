@@ -790,9 +790,12 @@
                 </div>
                 <p class="chat-moderator-status" id="chat-moderator-status">Acceso reservado a cuentas autorizadas en Supabase.</p>
             </div>
-            <div class="chat-login">
+            <div class="chat-login" id="chat-login">
                 <input id="chat-nickname" type="text" maxlength="25" placeholder="Tu apodo (máx. 25 caracteres)">
-                <button class="btn-primary" onclick="saveNickname()">Entrar</button>
+                <button class="btn-primary" id="chat-join-button" onclick="saveNickname()">Entrar</button>
+            </div>
+            <div id="chat-moderator-identity" class="chat-login" hidden style="display:none;">
+                <strong style="color:var(--accent);padding:12px 4px;">Estás participando como IKA · Moderador</strong>
             </div>
             <div class="chat-messages" id="chat-messages" aria-live="polite"></div>
             <p id="chat-status" role="status" style="margin-top:7px;color:var(--text-muted);font-size:.78rem;"></p>
@@ -1925,20 +1928,44 @@
             panel.hidden=!panel.hidden;
         }
         async function refreshChatModeratorState() {
-            const {data:sessionData}=await _supabase.auth.getSession();
-            const user=sessionData?.session?.user||null;
+            let user=null;
+            try {
+                const {data:sessionData,error:sessionError}=await _supabase.auth.getSession();
+                if(sessionError) throw sessionError;
+                user=sessionData?.session?.user||null;
+            } catch(err) { console.error('Moderator session check:',err); }
             chatIsModerator=false;
             chatModeratorUserId=user?.id||null;
             if(user){
-                const {data,error}=await _supabase.rpc('ika_music_is_admin');
-                if(!error && data===true) chatIsModerator=true;
-                else if(error) console.error('Moderator permission check:',error);
+                try {
+                    const {data,error}=await _supabase.rpc('ika_music_is_admin');
+                    if(!error && data===true) chatIsModerator=true;
+                    else if(error) console.error('Moderator permission check:',error);
+                } catch(err) { console.error('Moderator permission check:',err); }
             }
-            document.getElementById('chat-moderator-login').hidden=chatIsModerator;
-            document.getElementById('chat-moderator-tools').hidden=!chatIsModerator;
-            if(chatIsModerator) setChatModeratorStatus('Moderador autorizado. Las herramientas están activas.');
-            else if(user) setChatModeratorStatus('Esta cuenta no está autorizada en ika_music_admins.',true);
-            else setChatModeratorStatus('Acceso reservado a cuentas autorizadas en Supabase.');
+            const login=document.getElementById('chat-moderator-login');
+            const tools=document.getElementById('chat-moderator-tools');
+            if(login) login.hidden=chatIsModerator;
+            if(tools) tools.hidden=!chatIsModerator;
+            const nickInput=document.getElementById('chat-nickname');
+            const chatLogin=document.getElementById('chat-login');
+            const identity=document.getElementById('chat-moderator-identity');
+            if(chatIsModerator){
+                if(nickInput){nickInput.value='IKA';nickInput.disabled=true;}
+                if(chatLogin) chatLogin.hidden=true;
+                if(identity){identity.hidden=false;identity.style.display='flex';}
+                setChatModeratorStatus('Moderador autorizado. Participas automáticamente con el nombre IKA.');
+            } else {
+                if(nickInput){
+                    nickInput.disabled=false;
+                    const saved=localStorage.getItem(CHAT_NICKNAME_KEY)||'';
+                    nickInput.value=saved&&!isReservedChatNickname(saved)?saved:'';
+                }
+                if(chatLogin) chatLogin.hidden=false;
+                if(identity){identity.hidden=true;identity.style.display='none';}
+                if(user) setChatModeratorStatus('Esta cuenta no está autorizada en ika_music_admins.',true);
+                else setChatModeratorStatus('Acceso reservado a cuentas autorizadas en Supabase. Inicia sesión para participar como IKA.');
+            }
             await loadChatMessages();
         }
         async function loginChatModerator() {
@@ -1961,13 +1988,22 @@
         async function logoutChatModerator() {
             await _supabase.auth.signOut();
             chatIsModerator=false;chatModeratorUserId=null;
-            document.getElementById('chat-moderator-login').hidden=false;
-            document.getElementById('chat-moderator-tools').hidden=true;
+            const login=document.getElementById('chat-moderator-login');
+            const tools=document.getElementById('chat-moderator-tools');
+            if(login) login.hidden=false;
+            if(tools) tools.hidden=true;
+            const nickInput=document.getElementById('chat-nickname');
+            const chatLogin=document.getElementById('chat-login');
+            const identity=document.getElementById('chat-moderator-identity');
+            if(nickInput){nickInput.disabled=false;const saved=localStorage.getItem(CHAT_NICKNAME_KEY)||'';nickInput.value=saved&&!isReservedChatNickname(saved)?saved:'';}
+            if(chatLogin) chatLogin.hidden=false;
+            if(identity){identity.hidden=true;identity.style.display='none';}
             setChatModeratorStatus('Sesión de moderador cerrada.');
             await loadChatMessages();
         }
         function saveNickname() {
             const input=document.getElementById('chat-nickname');
+            if(chatIsModerator){input.value='IKA';setChatStatus('Como moderador participas con el nombre IKA.');return true;}
             const nick=input.value.trim();
             if(!nick){setChatStatus('Escribe un apodo antes de entrar.',true);input.focus();return false;}
             if(nick.length>25){setChatStatus('El apodo no puede superar 25 caracteres.',true);input.focus();return false;}
@@ -2020,11 +2056,11 @@
         async function sendChatMessage() {
             if(chatSending)return;
             const input=document.getElementById('chat-input');const msg=input.value.trim();
-            const nickInput=document.getElementById('chat-nickname');let nick=nickInput.value.trim()||localStorage.getItem(CHAT_NICKNAME_KEY)||'';
+            const nickInput=document.getElementById('chat-nickname');let nick=chatIsModerator?'IKA':(nickInput.value.trim()||localStorage.getItem(CHAT_NICKNAME_KEY)||'');
             if(!nick){setChatStatus('Primero escribe tu apodo y pulsa Entrar.',true);nickInput.focus();return;}
-            if(isReservedChatNickname(nick)){setChatStatus('Ese apodo está reservado. No puedes usar AtlasIKA, IKA ni IKA Music.',true);nickInput.focus();return;}
+            if(!chatIsModerator && isReservedChatNickname(nick)){setChatStatus('Ese apodo está reservado. No puedes usar AtlasIKA, IKA ni IKA Music.',true);nickInput.focus();return;}
             if(!msg)return;if(msg.length>1000){setChatStatus('El mensaje no puede superar 1000 caracteres.',true);return;}
-            localStorage.setItem(CHAT_NICKNAME_KEY,nick);chatSending=true;
+            if(!chatIsModerator) localStorage.setItem(CHAT_NICKNAME_KEY,nick);chatSending=true;
             const sendButton=document.querySelector('.chat-compose .btn-primary');if(sendButton)sendButton.disabled=true;
             const messageUserId=(chatIsModerator&&chatModeratorUserId)?chatModeratorUserId:getChatUserId();
             const {error}=await _supabase.from('ika_music_chat_messages').insert({user_id:messageUserId,nickname:nick,message:msg});
