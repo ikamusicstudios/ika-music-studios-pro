@@ -7,6 +7,10 @@
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#030712">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="IKA Music">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -523,12 +527,29 @@
                 <option value="ar">🇸🇦 العربية</option>
                 <option value="zh">🇨🇳 中文</option>
                 <option value="el">🇬🇷 Ελληνικά</option>
+                <option value="it">🇮🇹 Italiano</option>
             </select>
             <button class="about-btn" onclick="openAboutModal()"><i class="fa-solid fa-circle-info"></i> <span data-i18n="about">Sobre IKA</span></button>
             <button class="contact-btn" onclick="openAccountModal()"><i class="fa-solid fa-user"></i> <span id="account-label">Cuenta</span></button>
             <a href="mailto:ikamusicstudios@gmail.com" class="contact-btn"><i class="fa-solid fa-envelope"></i> <span>Contacto</span></a>
         </div>
     </header>
+
+
+    <section id="pwa-install-area" class="pwa-install-area" aria-label="Install IKA Music Studios">
+      <button id="pwa-install-button" class="pwa-install-button" type="button">
+        <i class="fa-solid fa-mobile-screen-button"></i>
+        <span data-i18n="Instalar aplicación">Instalar aplicación</span>
+      </button>
+      <p id="pwa-install-help" class="pwa-install-help" hidden></p>
+    </section>
+    <style>
+      .pwa-install-area{display:flex;flex-direction:column;align-items:center;gap:7px;margin:0 auto 18px;width:100%;position:relative;z-index:2}
+      .pwa-install-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:10px 20px;border:1px solid var(--accent-primary);border-radius:24px;background:rgba(0,240,255,.12);color:var(--accent-primary);font:700 .9rem 'Outfit',sans-serif;cursor:pointer;transition:.2s}
+      .pwa-install-button:hover{background:var(--accent-primary);color:#030712;box-shadow:0 0 18px rgba(0,240,255,.28)}
+      .pwa-install-help{max-width:560px;text-align:center;color:var(--text-muted);font-size:.82rem;line-height:1.5;padding:8px 12px;border:1px solid var(--border-color);border-radius:12px;background:var(--card-bg)}
+      .pwa-install-button[hidden],.pwa-install-help[hidden]{display:none}
+    </style>
 
     <main>
 
@@ -558,8 +579,12 @@
                             <option value="pop">Pop</option>
                             <option value="flamenco">Flamenco / Rumba</option>
                             <option value="folk">Folk</option>
-                            <option value="electronic">Electronic</option>
-                            <option value="balada">Balada</option>
+                            <option value="electronic">Electronic / Dance</option>
+                            <option value="balada">Baladas / Acústico</option>
+                            <option value="bachata">Bachata</option>
+                                                        <option value="ranchera">Ranchera 🇲🇽</option>
+<option value="summer-vibes">Summer Vibes</option>
+                            <option value="multigenre">Multigénero</option>
                         </select>
                         <select id="quick-filter-lang" class="collection-filter-select" onchange="handleQuickCollectionFilter()">
                             <option value="all">🌐 Todos idiomas</option>
@@ -567,7 +592,13 @@
                             <option value="en">Inglés 🇬🇧</option>
                             <option value="ru">Ruso 🇷🇺</option>
                             <option value="fr">Francés 🇫🇷</option>
+                            <option value="de">Alemán 🇩🇪</option>
+                            <option value="ar">Árabe 🇸🇦</option>
+                            <option value="zh">Chino 🇨🇳</option>
+                            <option value="el">Griego 🇬🇷</option>
+                            <option value="tr">Turco 🇹🇷</option>
                             <option value="it">Italiano 🇮🇹</option>
+                            <option value="other">Otros</option>
                         </select>
                     </div>
                 </div>
@@ -616,7 +647,11 @@
                         <option value="flamenco">Flamenco / Rumba</option>
                         <option value="folk">Folk</option>
                         <option value="electronic">Electronic / Dance</option>
-                        <option value="balada">Balada / Acústico</option>
+                        <option value="balada">Baladas / Acústico</option>
+                        <option value="bachata">Bachata</option>
+                                                    <option value="ranchera">Ranchera 🇲🇽</option>
+<option value="summer-vibes">Summer Vibes</option>
+                        <option value="multigenre">Multigénero</option>
                     </select>
                 </div>
 
@@ -628,7 +663,13 @@
                         <option value="en">Inglés 🇬🇧</option>
                         <option value="ru">Ruso 🇷🇺</option>
                         <option value="fr">Francés 🇫🇷</option>
+                        <option value="de">Alemán 🇩🇪</option>
+                        <option value="ar">Árabe 🇸🇦</option>
+                        <option value="zh">Chino 🇨🇳</option>
+                        <option value="el">Griego 🇬🇷</option>
+                        <option value="tr">Turco 🇹🇷</option>
                         <option value="it">Italiano 🇮🇹</option>
+                        <option value="other">Otros</option>
                         <option value="instrumental">Instrumental 🎼</option>
                     </select>
                 </div>
@@ -709,7 +750,19 @@
                 <div class="collab-field"><label>Nombre artístico</label><input required placeholder="Tu nombre"></div>
                 <div class="collab-field"><label>Título de la canción</label><input required placeholder="Título del tema"></div>
                 <div class="collab-field"><label>Estilo / Género</label><input required placeholder="Ej. Flamenco Rock"></div>
-                <div class="collab-field"><label>Idioma</label><select><option>Español</option><option>Inglés</option><option>Otro</option></select></div>
+                <div class="collab-field"><label>Idioma</label><select>
+                    <option>Español</option>
+                    <option>English</option>
+                    <option>Français</option>
+                    <option>Türkçe</option>
+                    <option>Deutsch</option>
+                    <option>Русский</option>
+                    <option>العربية</option>
+                    <option>中文</option>
+                    <option>Ελληνικά</option>
+                    <option>Italiano</option>
+                    <option>Otro</option>
+                </select></div>
                 <div class="collab-field full"><label>Enlace de la canción en Suno</label><input type="url" required placeholder="https://suno.com/song/..."></div>
                 <button class="btn-primary full" type="submit">Enviar propuesta para revisión</button>
             </form>
@@ -1348,6 +1401,15 @@
 
 
 
+
+        const pwaInstallTranslations = {
+          en:"Install app",fr:"Installer l’application",tr:"Uygulamayı yükle",de:"App installieren",
+          ru:"Установить приложение",ar:"تثبيت التطبيق",zh:"安装应用",el:"Εγκατάσταση εφαρμογής"
+        };
+        Object.entries(pwaInstallTranslations).forEach(([code,value]) => {
+          Object.assign(interfaceTranslations[code], {"Instalar aplicación":value});
+        });
+
         // Traducción del texto completo del manifiesto (se conserva el original en español).
         const manifestoOriginal = '"La música no es quién la crea, ni cómo se hace. No depende de las manos que la componen, de los instrumentos que la interpretan ni de la tecnología que la hace posible. La música es una sucesión de sonidos que se encuentran, se enlazan y despiertan algo en nosotros. Es emoción, compañía, recuerdo y alegría. Si te hace sentir, es música."';
         const manifestoTranslations = {
@@ -1514,6 +1576,60 @@
             e.preventDefault();
             alert('¡Gracias! Tu propuesta de canción ha sido enviada para revisión.');
             e.target.reset();
+        }
+
+
+        // PWA install: Android/Chromium prompt; iPhone/iPad guided Add to Home Screen.
+        let deferredInstallPrompt = null;
+        const pwaInstallButton = document.getElementById('pwa-install-button');
+        const pwaInstallHelp = document.getElementById('pwa-install-help');
+        const pwaIsIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const pwaIsStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+        function showPwaInstallHelp(message) {
+          pwaInstallHelp.textContent = message;
+          pwaInstallHelp.hidden = false;
+        }
+        if (pwaIsStandalone) {
+          document.getElementById('pwa-install-area').hidden = true;
+        } else {
+          window.addEventListener('beforeinstallprompt', (event) => {
+            event.preventDefault();
+            deferredInstallPrompt = event;
+          });
+          pwaInstallButton.addEventListener('click', async () => {
+            if (deferredInstallPrompt) {
+              deferredInstallPrompt.prompt();
+              await deferredInstallPrompt.userChoice;
+              deferredInstallPrompt = null;
+            } else if (pwaIsIOS) {
+              const lang = (localStorage.getItem('ika_music_interface_language') || 'es');
+              const messages = {
+                es:'Para instalarla en iPhone o iPad: pulsa Compartir en Safari y después “Añadir a pantalla de inicio”.',
+                en:'To install on iPhone or iPad: tap Share in Safari, then “Add to Home Screen”.',
+                fr:'Pour installer sur iPhone ou iPad : touchez Partager dans Safari, puis « Sur l’écran d’accueil ».',
+                tr:'iPhone veya iPad’e yüklemek için Safari’de Paylaş’a, ardından “Ana Ekrana Ekle”ye dokunun.',
+                de:'Auf iPhone oder iPad: In Safari auf „Teilen“ und dann auf „Zum Home-Bildschirm“ tippen.',
+                ru:'Чтобы установить на iPhone или iPad: нажмите «Поделиться» в Safari, затем «На экран Домой».',
+                ar:'للتثبيت على iPhone أو iPad: اضغط على «مشاركة» في Safari ثم «إضافة إلى الشاشة الرئيسية».',
+                zh:'在 iPhone 或 iPad 上安装：点击 Safari 中的“分享”，然后选择“添加到主屏幕”。',
+                el:'Για εγκατάσταση σε iPhone ή iPad: πατήστε «Κοινή χρήση» στο Safari και μετά «Προσθήκη στην οθόνη Αφετηρίας».'
+              };
+              showPwaInstallHelp(messages[lang] || messages.es);
+            } else {
+              showPwaInstallHelp('Para instalarla, abre el menú del navegador y selecciona “Instalar aplicación” o “Añadir a pantalla de inicio”.');
+            }
+          });
+        }
+        window.addEventListener('appinstalled', () => {
+          document.getElementById('pwa-install-area').hidden = true;
+          deferredInstallPrompt = null;
+        });
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(err => console.error('PWA service worker:', err));
+          });
         }
 
         initApp();
