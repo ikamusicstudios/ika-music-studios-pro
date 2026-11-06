@@ -2026,7 +2026,8 @@
             if(!msg)return;if(msg.length>1000){setChatStatus('El mensaje no puede superar 1000 caracteres.',true);return;}
             localStorage.setItem(CHAT_NICKNAME_KEY,nick);chatSending=true;
             const sendButton=document.querySelector('.chat-compose .btn-primary');if(sendButton)sendButton.disabled=true;
-            const {error}=await _supabase.from('ika_music_chat_messages').insert({user_id:getChatUserId(),nickname:nick,message:msg});
+            const messageUserId=(chatIsModerator&&chatModeratorUserId)?chatModeratorUserId:getChatUserId();
+            const {error}=await _supabase.from('ika_music_chat_messages').insert({user_id:messageUserId,nickname:nick,message:msg});
             chatSending=false;if(sendButton)sendButton.disabled=false;
             if(error){console.error('IKA chat send error:',error);const detail=/row-level security|policy/i.test(error.message||'')?'No puedes publicar: este usuario puede estar bloqueado o no tener permiso.':'No se pudo enviar el mensaje. Comprueba la conexión con Supabase.';setChatStatus(detail,true);return;}
             input.value='';setChatStatus('Mensaje enviado.');
