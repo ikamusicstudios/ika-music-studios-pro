@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IKA Music Studios v2.1</title>
+<title>IKA Music Studios v2.2</title>
 
 <!-- Librería de Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -340,34 +340,19 @@ main {
   min-height: 18px;
 }
 
-.player-container {
-  width: 100%;
-  height: 430px;
+/* REPRODUCTOR NATIVO LIMPIO HTML5 */
+.native-player-box {
+  background: #0d0e11;
+  border: 1px solid var(--border);
   border-radius: 9px;
-  background: #080808;
-  overflow: hidden;
-  position: relative;
+  padding: 25px 20px;
+  text-align: center;
 }
 
-/* Truco visual limpio para cubrir y ocultar el icono de la cadena de Suno en la esquina superior */
-.player-container::after {
-  content: "";
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  width: 36px;
-  height: 36px;
-  background: #121212;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.player-frame {
+.native-player-box audio {
   width: 100%;
-  height: 100%;
-  border: 0;
-  display: block;
+  margin-top: 15px;
+  outline: none;
 }
 
 .player-navigation {
@@ -433,9 +418,6 @@ footer {
   }
   .player-panel {
     position: static;
-  }
-  .player-container {
-    height: 420px;
   }
   header h1 {
     font-size: 24px;
@@ -532,7 +514,7 @@ footer {
     <div class="collection-grid" id="collection-grid"></div>
   </section>
 
-  <!-- DETALLE DE UNA COLECCIÓN (REPRODUCTOR FLUIDO) -->
+  <!-- DETALLE DE UNA COLECCIÓN (REPRODUCTOR NATIVO) -->
   <section id="detail-page" hidden>
     <button class="back-button" onclick="backToCategory()">
       ← Volver al listado
@@ -547,11 +529,13 @@ footer {
       </div>
 
       <div class="player-panel">
-        <h3>Reproductor</h3>
+        <h3>Reproductor IKA</h3>
         <p class="now-playing" id="now-playing">Selecciona una canción</p>
 
-        <div class="player-container" id="player-container">
-          <!-- El iframe se genera dinámicamente -->
+        <div class="native-player-box">
+          <audio id="audio-player" controls autoplay>
+            Tu navegador no soporta el reproductor de audio.
+          </audio>
         </div>
 
         <div class="player-navigation">
@@ -567,7 +551,7 @@ footer {
 </main>
 
 <footer>
-  IKA Music Studios · Reproductores oficiales de Suno
+  IKA Music Studios · Audio Streaming Nativo
 </footer>
 
 
@@ -607,7 +591,7 @@ const collectionTitle = document.getElementById("collection-title");
 const author = document.getElementById("author");
 const trackList = document.getElementById("track-list");
 
-const playerContainer = document.getElementById("player-container");
+const audioPlayer = document.getElementById("audio-player");
 const nowPlaying = document.getElementById("now-playing");
 const previousButton = document.getElementById("previous-button");
 const nextButton = document.getElementById("next-button");
@@ -621,7 +605,8 @@ function goHome() {
   homePage.hidden = false;
   categoryPage.hidden = true;
   detailPage.hidden = true;
-  playerContainer.innerHTML = "";
+  audioPlayer.pause();
+  audioPlayer.src = "";
 }
 
 function showCategory(type) {
@@ -722,7 +707,8 @@ function openCollection(index) {
 }
 
 function backToCategory() {
-  playerContainer.innerHTML = "";
+  audioPlayer.pause();
+  audioPlayer.src = "";
   detailPage.hidden = true;
   categoryPage.hidden = false;
 }
@@ -786,15 +772,11 @@ function playTrack(index) {
   const track = tracksArr[index];
   currentTrack = index;
 
-  playerContainer.innerHTML = `
-    <iframe
-      class="player-frame"
-      src="https://suno.com/embed/${track.id}?autoplay=1"
-      title="Reproductor oficial de Suno"
-      allow="autoplay; encrypted-media"
-      allowfullscreen>
-    </iframe>
-  `;
+  // Enlace directo de streaming de audio de Suno utilizando el ID de la pista
+  audioPlayer.src = `https://cdn1.suno.ai/${track.id}.mp3`;
+  audioPlayer.play().catch(err => {
+    console.log("Autoreproducción prevenida por el navegador, esperando interacción:", err);
+  });
 
   nowPlaying.textContent = track.name;
 
@@ -806,6 +788,21 @@ function playTrack(index) {
   nextButton.disabled = index === tracksArr.length - 1;
   trackCounter.textContent = "Canción " + (index + 1) + " de " + tracksArr.length;
 }
+
+// Evento nativo: cuando termina una canción, salta automáticamente a la siguiente de la lista
+audioPlayer.addEventListener('ended', () => {
+  const collection = collections[currentCollection];
+  if (!collection) return;
+
+  let tracksArr = collection.tracks;
+  if (typeof tracksArr === 'string') {
+    try { tracksArr = JSON.parse(tracksArr); } catch(e) { tracksArr = []; }
+  }
+
+  if (Array.isArray(tracksArr) && currentTrack < tracksArr.length - 1) {
+    playTrack(currentTrack + 1);
+  }
+});
 
 function previousTrack() {
   if (currentTrack > 0) playTrack(currentTrack - 1);
