@@ -742,12 +742,26 @@ let ikaCommentSeenIds = new Set(JSON.parse(localStorage.getItem('ika_admin_seen_
 let ikaCommentSeenInitialized = localStorage.getItem('ika_admin_seen_comment_ids') !== null;
 function ikaAdminEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function ikaCommentSongName(trackKey){
-  const parts=String(trackKey||'').split('::'); const collectionId=parts[0], trackId=parts.slice(1).join('::');
-  const col=(loadedCollectionsData||[]).find(c=>String(c.id)===collectionId||String(c.name)===collectionId);
-  if(!col)return 'Canción ('+trackId+')';
-  let tracks=col.tracks; if(typeof tracks==='string'){try{tracks=JSON.parse(tracks)}catch(e){tracks=[]}}
-  const track=Array.isArray(tracks)?tracks.find(t=>String(t.id)===trackId):null;
-  return (track?.name||'Canción')+' · '+(col.name||'Colección');
+  const raw=String(trackKey||'').trim();
+  if(!raw) return 'Canción sin identificar';
+  const parts=raw.split('::');
+  const collectionId=parts.length>1?parts[0]:null;
+  const trackId=parts.length>1?parts.slice(1).join('::'):raw;
+  const collections=Array.isArray(loadedCollectionsData)?loadedCollectionsData:[];
+  const candidates=collectionId
+    ? collections.filter(c=>String(c.id)===collectionId||String(c.name)===collectionId)
+    : collections;
+  for(const col of candidates){
+    let tracks=col.tracks;
+    if(typeof tracks==='string'){try{tracks=JSON.parse(tracks)}catch(e){tracks=[]}}
+    const track=Array.isArray(tracks)?tracks.find(t=>String(t.id)===trackId):null;
+    if(track){
+      const title=track.name||track.title||'Canción sin título';
+      return col.name?title+' · '+col.name:title;
+    }
+  }
+  // Nunca mostrar el UUID técnico al administrador.
+  return 'Canción sin título identificado';
 }
 function ikaRenderAdminComments(){
   const host=document.getElementById('ika-admin-comments-list'); if(!host)return;
@@ -912,6 +926,9 @@ async function loadCollections() {
     if (error) throw error;
 
     loadedCollectionsData = data || [];
+    // Los comentarios pueden llegar antes que el catálogo; volver a pintar
+    // sus nombres cuando las colecciones ya estén cargadas.
+    if (typeof ikaRenderAdminComments === 'function') ikaRenderAdminComments();
 
     if (loadedCollectionsData.length === 0) {
       listContainer.innerHTML = `<div style="color:var(--muted); padding:15px; text-align:center;">No hay colecciones guardadas en Supabase.</div>`;
