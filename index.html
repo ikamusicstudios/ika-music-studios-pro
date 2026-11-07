@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IKA Music Studios</title>
+    <title>IKA Music Studios v4.7</title>
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#030712">
@@ -552,7 +552,6 @@
                 <option value="it">🇮🇹 Italiano</option>
             </select>
             <button class="about-btn" onclick="openAboutModal()"><i class="fa-solid fa-circle-info"></i> <span data-i18n="about">Sobre IKA</span></button>
-            <button class="contact-btn" onclick="openAccountModal()"><i class="fa-solid fa-user"></i> <span id="account-label">Cuenta</span></button>
             <a href="mailto:ikamusicstudios@gmail.com" class="contact-btn"><i class="fa-solid fa-envelope"></i> <span>Contacto</span></a>
         </div>
     </header>
@@ -742,11 +741,6 @@
                         <iframe class="player-frame" src="" title="IKA Music Player" allow="autoplay; encrypted-media" allowfullscreen></iframe>
                     </div>
 
-                    <div class="player-actions">
-                        <button class="add-playlist-btn" onclick="addToUserPlaylist()">
-                            <i class="fa-solid fa-plus"></i> Añadir a mi Playlist
-                        </button>
-                    </div>
                     <section id="ika-track-community" style="margin-top:16px;text-align:left"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="nav-track" id="ika-like-button" onclick="ikaLikeCurrentTrack()">♡ Me gusta <span id="ika-like-count">0</span></button></div><div style="margin-top:14px"><h4>Comentarios</h4><div id="ika-comments-list" style="max-height:220px;overflow:auto;margin:8px 0"></div><input id="ika-comment-alias" maxlength="30" placeholder="Tu nombre o apodo" style="width:100%;margin:5px 0;padding:9px"><textarea id="ika-comment-message" maxlength="500" placeholder="Escribe un comentario..." style="width:100%;padding:9px"></textarea><button class="btn-primary" style="margin-top:8px" onclick="ikaSubmitComment()">Publicar comentario</button></div></section>
 
                     <div class="player-navigation">
@@ -828,25 +822,6 @@
         </div>
     </div>
 
-    <!-- MODAL CUENTA IKA -->
-    <div class="modal" id="account-modal"><div class="modal-content" style="max-width:460px">
-      <button class="close-modal" onclick="closeModal('account-modal')">&times;</button>
-      <h2>Cuenta IKA Studios</h2><p id="ika-account-status" style="color:var(--text-muted);margin:8px 0 14px">Regístrate o inicia sesión para crear playlists privadas.</p>
-      <div class="form-group"><label>Email</label><input id="ika-auth-email" type="email" autocomplete="email" placeholder="tu@email.com"></div>
-      <div class="form-group"><label>Contraseña</label><input id="ika-auth-password" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><button class="btn-primary" onclick="ikaSignIn()">Iniciar sesión</button><button class="btn-primary" onclick="ikaSignUp()">Crear cuenta</button></div>
-      <button class="nav-track" style="width:100%;margin-top:8px" onclick="ikaResetPassword()">He olvidado mi contraseña</button>
-      <button class="nav-track" id="ika-logout-btn" style="width:100%;margin-top:8px;display:none" onclick="ikaSignOut()">Cerrar sesión</button>
-      <div id="ika-my-playlists" style="margin-top:16px"></div>
-    </div></div>
-    <!-- MODAL PLAYLISTS PRIVADAS -->
-    <div class="modal" id="add-playlist-modal"><div class="modal-content" style="max-width:440px">
-      <button class="close-modal" onclick="closeModal('add-playlist-modal')">&times;</button><h2>Mis playlists privadas</h2>
-      <p style="color:var(--text-muted);margin:8px 0">Canción: <strong id="playlist-target-song-title"></strong></p>
-      <div class="form-group"><label>Guardar en una playlist</label><select id="user-playlist-select" style="width:100%;padding:10px;background:#080a14;color:white"></select></div>
-      <button class="btn-primary" style="width:100%" onclick="confirmAddToPlaylist()">Añadir canción</button>
-      <div style="border-top:1px solid var(--border-color);margin-top:16px;padding-top:14px"><label>Nueva playlist</label><input id="ika-new-playlist-name" placeholder="Nombre de la playlist"><button class="btn-primary" style="width:100%;margin-top:8px" onclick="ikaCreatePlaylistFromModal()">Crear playlist</button></div>
-    </div></div>
     <!-- MODAL LEGAL -->
     <div class="modal" id="legal-modal">
         <div class="modal-content" style="max-width: 630px;">
@@ -1004,16 +979,7 @@
         function backToCategory() {
             const iframe = playerContainer.querySelector("iframe");
             if (iframe) iframe.src = "";
-            detailPage.hidden = true;
-            if (ikaActivePrivatePlaylistId) {
-                homePage.hidden = false;
-                categoryPage.hidden = true;
-                ikaActivePrivatePlaylistId = null;
-                openAccountModal();
-                ikaLoadPlaylists();
-            } else {
-                categoryPage.hidden = false;
-            }
+            detailPage.hidden = true; categoryPage.hidden = false;
         }
 
         function renderCollection(initialTrackIndex = 0) {
@@ -1189,7 +1155,6 @@
         }
 
         function openAboutModal() { document.getElementById('about-modal').style.display = 'flex'; }
-        function openAccountModal() { document.getElementById('account-modal').style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         /* SISTEMA DE TRADUCCIÓN POR CLAVES — MISMA ARQUITECTURA QUE ATLASIKA */
@@ -2288,61 +2253,21 @@
         // IKA Music Studios: cuenta, playlists privadas, likes y comentarios.
         const IKA_USER_PLAYLISTS='ika_user_playlists', IKA_USER_PLAYLIST_TRACKS='ika_user_playlist_tracks';
         let ikaAuthUser=null, ikaCurrentCommentsTrack=null, ikaCurrentLikeTrack=null, ikaLikedTrackKeys=new Set();
-        let ikaActivePrivatePlaylistId=null, ikaPrivatePlaylistTrackSources=[], ikaPrivateCollectionIndex=null;
-        function ikaTrackContext(){const c=collections[currentCollection];if(!c)return null;let a=c.tracks;if(typeof a==='string'){try{a=JSON.parse(a)}catch(e){a=[]}}const t=Array.isArray(a)?a[currentTrack]:null;if(!t)return null;const source=ikaActivePrivatePlaylistId?ikaPrivatePlaylistTrackSources[currentTrack]:null;const collectionId=String(source?.collection_id||c.id||c.name);return {track_id:String(t.id),collection_id:collectionId,collection_name:String(source?.collection_name||c.name||'Colección'),track_name:String(t.name||t.title||'Sin título'),key:collectionId+'::'+String(t.id)}}
+        function ikaTrackContext(){const c=collections[currentCollection];if(!c)return null;let a=c.tracks;if(typeof a==='string'){try{a=JSON.parse(a)}catch(e){a=[]}}const t=Array.isArray(a)?a[currentTrack]:null;if(!t)return null;return {track_id:String(t.id),collection_id:String(c.id||c.name),collection_name:String(c.name||'Colección'),track_name:String(t.name||t.title||'Sin título'),key:String(c.id||c.name)+'::'+String(t.id)}}
         function ikaVisitorId(){let v=localStorage.getItem('ika_music_visitor_id');if(!v){v=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random());localStorage.setItem('ika_music_visitor_id',v)}return v}
         async function ikaRefreshAuth(){try{const {data}=await _supabase.auth.getSession();ikaAuthUser=data?.session?.user||null;const b=document.getElementById('ika-logout-btn');if(b)b.style.display=ikaAuthUser?'block':'none';const st=document.getElementById('ika-account-status');if(st)st.textContent=ikaAuthUser?'Sesión iniciada: '+ikaAuthUser.email:'Regístrate o inicia sesión para crear playlists privadas.';if(ikaAuthUser)await ikaLoadPlaylists()}catch(e){console.warn('IKA auth',e)}}
         async function ikaSignUp(){const email=document.getElementById('ika-auth-email').value.trim(),password=document.getElementById('ika-auth-password').value;if(!email||password.length<6){alert('Introduce un email válido y una contraseña de al menos 6 caracteres.');return}const {error}=await _supabase.auth.signUp({email,password});if(error){alert(error.message);return}alert('Cuenta creada. Si Supabase requiere confirmación, revisa tu email antes de iniciar sesión.');}
         async function ikaSignIn(){const email=document.getElementById('ika-auth-email').value.trim(),password=document.getElementById('ika-auth-password').value;const {error}=await _supabase.auth.signInWithPassword({email,password});if(error){alert(error.message);return}await ikaRefreshAuth();alert('Sesión iniciada.');}
         async function ikaResetPassword(){const email=document.getElementById('ika-auth-email').value.trim();if(!email){alert('Escribe primero tu email.');return}const {error}=await _supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});alert(error?error.message:'Si el email existe, recibirás instrucciones para cambiar la contraseña.');}
-        async function ikaSignOut(){await _supabase.auth.signOut();ikaAuthUser=null;ikaActivePrivatePlaylistId=null;ikaPrivatePlaylistTrackSources=[];await ikaRefreshAuth();}
+        async function ikaSignOut(){await _supabase.auth.signOut();ikaAuthUser=null;await ikaRefreshAuth();}
         async function ikaRequireUser(){await ikaRefreshAuth();if(!ikaAuthUser||ikaAuthUser.is_anonymous){alert('Inicia sesión o crea una cuenta para utilizar playlists privadas.');openAccountModal();return null}return ikaAuthUser}
-        async function ikaLoadPlaylists(){
-            const host=document.getElementById('ika-my-playlists');
-            if(!host)return;
-            if(!ikaAuthUser){host.innerHTML='';return}
-            host.innerHTML='<h3>Mis playlists</h3><p style="color:var(--text-muted)">Cargando...</p>';
-            const {data,error}=await _supabase.from(IKA_USER_PLAYLISTS).select('id,name,created_at').eq('user_id',ikaAuthUser.id).order('created_at',{ascending:false});
-            if(error){host.innerHTML='<h3>Mis playlists</h3><p style="color:#f99">No se pudieron cargar tus playlists: '+ikaEsc(error.message)+'</p>';return}
-            host.innerHTML='<h3>Mis playlists</h3>'+(data||[]).map(p=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid var(--border-color)"><span style="flex:1;min-width:0;overflow-wrap:anywhere">${ikaEsc(p.name)}</span><div style="display:flex;gap:6px"><button class="nav-track" onclick="ikaOpenPlaylist('${p.id}')">Abrir</button><button class="nav-track" onclick="ikaDeletePlaylist('${p.id}')">Eliminar</button></div></div>`).join('')||'<p>No tienes playlists todavía.</p>';
-        }
+        async function ikaLoadPlaylists(){const host=document.getElementById('ika-my-playlists');if(!host||!ikaAuthUser)return;const {data,error}=await _supabase.from(IKA_USER_PLAYLISTS).select('id,name,created_at').order('created_at',{ascending:false});if(error){host.innerHTML='<p style="color:#f99">Activa las tablas de playlists con el SQL de instalación.</p>';return}host.innerHTML='<h3>Mis playlists</h3>'+(data||[]).map(p=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--border-color)"><span>${ikaEsc(p.name)}</span><button class="nav-track" onclick="ikaDeletePlaylist('${p.id}')">Eliminar</button></div>`).join('')||'<p>No tienes playlists todavía.</p>';}
         function ikaEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
         async function ikaCreatePlaylistFromModal(){const user=await ikaRequireUser();if(!user)return;const name=document.getElementById('ika-new-playlist-name').value.trim();if(!name||name.length>60){alert('Escribe un nombre de hasta 60 caracteres.');return}const {error}=await _supabase.from(IKA_USER_PLAYLISTS).insert({user_id:user.id,name});if(error){alert(error.message);return}document.getElementById('ika-new-playlist-name').value='';await ikaLoadPlaylists();await ikaFillPlaylistSelect();}
-        async function ikaFillPlaylistSelect(){const sel=document.getElementById('user-playlist-select');if(!sel)return;const user=await ikaRequireUser();if(!user)return;const {data,error}=await _supabase.from(IKA_USER_PLAYLISTS).select('id,name').eq('user_id',user.id).order('created_at',{ascending:false});if(error){sel.innerHTML='<option value="">No se pudieron cargar</option>';return}sel.innerHTML=(data||[]).map(p=>`<option value="${p.id}">${ikaEsc(p.name)}</option>`).join('')||'<option value="">Crea primero una playlist</option>';}
-        async function ikaDeletePlaylist(id){const user=await ikaRequireUser();if(!user)return;if(!confirm('¿Eliminar esta playlist y sus canciones?'))return;const {error}=await _supabase.from(IKA_USER_PLAYLISTS).delete().eq('id',id).eq('user_id',user.id);if(error)alert(error.message);else await ikaLoadPlaylists()}
-        async function ikaOpenPlaylist(playlistId){
-            const user=await ikaRequireUser();if(!user)return;
-            const {data:playlist,error:playlistError}=await _supabase.from(IKA_USER_PLAYLISTS).select('id,name').eq('id',playlistId).eq('user_id',user.id).single();
-            if(playlistError||!playlist){alert('No se pudo abrir esta playlist o no tienes permiso para verla.');return}
-            const {data:rows,error}=await _supabase.from(IKA_USER_PLAYLIST_TRACKS).select('playlist_id,collection_id,track_id,track_name').eq('playlist_id',playlistId);
-            if(error){alert('No se pudieron cargar las canciones: '+error.message);return}
-            const orderedRows=rows||[];
-            const privateTracks=[],sources=[];
-            orderedRows.forEach(row=>{
-                let found=null, sourceCollection=null;
-                for(const col of collections){
-                    let arr=col.tracks;
-                    if(typeof arr==='string'){try{arr=JSON.parse(arr)}catch(e){arr=[]}}
-                    if(Array.isArray(arr)){
-                        const match=arr.find(t=>String(t.id)===String(row.track_id));
-                        if(match){found=match;sourceCollection=col;break}
-                    }
-                }
-                privateTracks.push(found?{...found,id:String(row.track_id),name:String(found.name||found.title||row.track_name||'Sin título')}:{id:String(row.track_id),name:String(row.track_name||'Canción')});
-                sources.push({collection_id:String(row.collection_id||sourceCollection?.id||sourceCollection?.name||''),collection_name:String(sourceCollection?.name||'Colección')});
-            });
-            const privateCollection={type:'playlist',name:playlist.name,author:'Mi biblioteca privada',style:'multigenre',language:'es',cover:'https://cdn2.suno.ai/image_adbb9fd1-b6bf-41c3-9a3e-959fd5edca26.jpeg',tracks:privateTracks};
-            if(ikaPrivateCollectionIndex===null){ikaPrivateCollectionIndex=collections.length;collections.push(privateCollection)}else{collections[ikaPrivateCollectionIndex]=privateCollection}
-            ikaPrivatePlaylistTrackSources=sources;
-            ikaActivePrivatePlaylistId=playlistId;
-            closeModal('account-modal');
-            currentCollection=ikaPrivateCollectionIndex;
-            homePage.hidden=true;categoryPage.hidden=true;detailPage.hidden=false;
-            renderCollection(0);
-            if(!privateTracks.length){nowPlaying.textContent='Esta playlist todavía no tiene canciones';previousButton.disabled=true;nextButton.disabled=true;trackCounter.textContent='0 canciones';}
-        }
+        async function ikaFillPlaylistSelect(){const sel=document.getElementById('user-playlist-select');if(!sel)return;const {data,error}=await _supabase.from(IKA_USER_PLAYLISTS).select('id,name').order('created_at',{ascending:false});if(error){sel.innerHTML='<option value="">No se pudieron cargar</option>';return}sel.innerHTML=(data||[]).map(p=>`<option value="${p.id}">${ikaEsc(p.name)}</option>`).join('')||'<option value="">Crea primero una playlist</option>';}
+        async function ikaDeletePlaylist(id){if(!confirm('¿Eliminar esta playlist y sus canciones?'))return;const {error}=await _supabase.from(IKA_USER_PLAYLISTS).delete().eq('id',id);if(error)alert(error.message);else await ikaLoadPlaylists()}
         async function addToUserPlaylist(){const user=await ikaRequireUser();if(!user)return;const ctx=ikaTrackContext();if(!ctx)return;document.getElementById('playlist-target-song-title').textContent=ctx.track_name;await ikaFillPlaylistSelect();document.getElementById('add-playlist-modal').style.display='flex'}
-        async function confirmAddToPlaylist(){const user=await ikaRequireUser();if(!user)return;const ctx=ikaTrackContext(),playlistId=document.getElementById('user-playlist-select').value;if(!ctx||!playlistId){alert('Crea o selecciona una playlist.');return}const {data:ownedPlaylist,error:checkError}=await _supabase.from(IKA_USER_PLAYLISTS).select('id').eq('id',playlistId).eq('user_id',user.id).single();if(checkError||!ownedPlaylist){alert('No tienes permiso para modificar esta playlist.');return}const {error}=await _supabase.from(IKA_USER_PLAYLIST_TRACKS).insert({playlist_id:playlistId,collection_id:ctx.collection_id,track_id:ctx.track_id,track_name:ctx.track_name});if(error){alert(error.message);return}closeModal('add-playlist-modal');alert('Canción añadida a tu playlist privada.');await ikaLoadPlaylists()}
+        async function confirmAddToPlaylist(){const user=await ikaRequireUser();if(!user)return;const ctx=ikaTrackContext(),playlistId=document.getElementById('user-playlist-select').value;if(!ctx||!playlistId){alert('Crea o selecciona una playlist.');return}const {error}=await _supabase.from(IKA_USER_PLAYLIST_TRACKS).insert({playlist_id:playlistId,collection_id:ctx.collection_id,track_id:ctx.track_id,track_name:ctx.track_name});if(error){alert(error.message);return}closeModal('add-playlist-modal');alert('Canción añadida a tu playlist privada.')}
         async function ikaRefreshTrackCommunity(){const ctx=ikaTrackContext();if(!ctx)return;ikaCurrentCommentsTrack=ctx;ikaCurrentLikeTrack=ctx;const {count}=await _supabase.from('ika_track_likes').select('*',{count:'exact',head:true}).eq('track_key',ctx.key);document.getElementById('ika-like-count').textContent=count||0;const {data,error}=await _supabase.from('ika_track_comments').select('alias,message,created_at').eq('track_key',ctx.key).order('created_at',{ascending:false}).limit(30);const host=document.getElementById('ika-comments-list');host.innerHTML=error?'<small>Comentarios no disponibles hasta instalar las tablas.</small>':(data||[]).map(c=>`<div style="padding:7px 0;border-bottom:1px solid var(--border-color)"><strong>${ikaEsc(c.alias)}</strong><div>${ikaEsc(c.message)}</div></div>`).join('')||'<small>Aún no hay comentarios.</small>'}
         async function ikaLikeCurrentTrack(){const ctx=ikaTrackContext();if(!ctx)return;const {error}=await _supabase.from('ika_track_likes').insert({track_key:ctx.key,visitor_id:ikaVisitorId()});if(error){alert(error.code==='23505'?'Ya has indicado que te gusta esta canción.':error.message);return}await ikaRefreshTrackCommunity()}
         async function ikaSubmitComment(){const ctx=ikaTrackContext();if(!ctx)return;const alias=document.getElementById('ika-comment-alias').value.trim(),message=document.getElementById('ika-comment-message').value.trim();if(!alias||!message){alert('Escribe tu nombre y un comentario.');return}const {error}=await _supabase.from('ika_track_comments').insert({track_key:ctx.key,track_name:ctx.track_name,collection_name:ctx.collection_name,alias,message,visitor_id:ikaVisitorId()});if(error){alert(error.message);return}document.getElementById('ika-comment-message').value='';await ikaRefreshTrackCommunity()}
