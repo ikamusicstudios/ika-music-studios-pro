@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IKA Music Studios v4.7</title>
+    <title>IKA Music</title>
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#030712">
@@ -525,7 +525,7 @@
 <body>
 
     <header>
-        <h1>IKA MUSIC STUDIOS</h1>
+        <h1>IKA MUSIC</h1>
         <p class="subtitle">TU MÚSICA · TUS COLECCIONES</p>
 
         <!-- MANIFIESTO EN CINTA CONTINUA (TICKER) -->
@@ -557,7 +557,7 @@
     </header>
 
 
-    <section id="pwa-install-area" class="pwa-install-area" aria-label="Install IKA Music Studios">
+    <section id="pwa-install-area" class="pwa-install-area" aria-label="Install IKA Music">
       <button id="pwa-install-button" class="pwa-install-button" type="button">
         <i class="fa-solid fa-mobile-screen-button"></i>
         <span data-i18n="Instalar aplicación">Instalar aplicación</span>
@@ -808,14 +808,14 @@
             <button onclick="openLegalModal('terms')">Condiciones de uso</button>
             <button onclick="openLegalModal('copyright')">Derechos de autor</button>
         </nav>
-        <div>© 2026 IKA Music Studios — Todos los derechos reservados.</div>
+        <div>© 2026 IKA Music — Todos los derechos reservados.</div>
     </footer>
 
     <!-- MODAL SOBRE NOSOTROS -->
     <div class="modal" id="about-modal">
         <div class="modal-content" style="max-width: 560px;">
             <button class="close-modal" onclick="closeModal('about-modal')">&times;</button>
-            <h2 style="margin-bottom: 12px; color: var(--accent-primary);">Sobre IKA Music Studios</h2>
+            <h2 style="margin-bottom: 12px; color: var(--accent-primary);">Sobre IKA Music</h2>
             <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">Somos dos amigos con una misma obsesión: la música. Si has acabado en este rincón de la red, lo más probable es que compartas esa misma pasión con nosotros.</p>
             <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">Disfrutamos componiendo, produciendo y dando forma a nuestras canciones aprovechando al máximo las herramientas de hoy en día. Sin grandes sellos, sin trampa ni cartón.</p>
             <p style="color: var(--accent-primary); font-weight: 700; line-height: 1.6;">Sin publicidad y sin interrupciones... Solo pura pasión por la música.</p>
@@ -838,7 +838,7 @@
 
         let collections = [
             {
-                type: 'album', name: 'Almas de Neon', author: 'IKA Music Studios', style: 'rock', language: 'es',
+                type: 'album', name: 'Almas de Neon', author: 'IKA Music', style: 'rock', language: 'es',
                 cover: 'https://cdn2.suno.ai/image_3c4d1042-6bfa-4c60-b7fd-8d928e43828c.jpeg?width=720',
                 tracks: [
                     { name: 'Donde Arde el Sur', id: '1b8f5228-5660-49bd-8316-aa9ab5b2a091' },
@@ -847,7 +847,7 @@
                 ]
             },
             {
-                type: 'playlist', name: 'Rumba & Flamenco Chill', author: 'IKA Music Studios', style: 'flamenco', language: 'es',
+                type: 'playlist', name: 'Rumba & Flamenco Chill', author: 'IKA Music', style: 'flamenco', language: 'es',
                 cover: 'https://cdn2.suno.ai/image_adbb9fd1-b6bf-41c3-9a3e-959fd5edca26.jpeg',
                 tracks: [
                     { name: 'Bailando en el Barrio', id: '9a9d701e-21fa-4f91-8848-024f2b189a01' },
@@ -1478,14 +1478,14 @@
 
         // Traducciones del chat: cabecera, acceso, estado y mensaje inicial.
         const chatTranslations = {
-          en: {"Chat en directo":"Live Chat","Entrar":"Join","Tu apodo (máx. 25 caracteres)":"Your nickname (max. 25 characters)","3 en línea":"3 online","¡Bienvenidos al chat de IKA Music Studios!":"Welcome to the IKA Music Studios chat!","Oyente":"Listener"},
-          fr: {"Chat en directo":"Chat en direct","Entrar":"Entrer","Tu apodo (máx. 25 caracteres)":"Votre pseudo (25 caractères max.)","3 en línea":"3 en ligne","¡Bienvenidos al chat de IKA Music Studios!":"Bienvenue dans le chat d’IKA Music Studios !","Oyente":"Auditeur"},
-          tr: {"Chat en directo":"Canlı Sohbet","Entrar":"Katıl","Tu apodo (máx. 25 caracteres)":"Takma adınız (en fazla 25 karakter)","3 en línea":"3 kişi çevrimiçi","¡Bienvenidos al chat de IKA Music Studios!":"IKA Music Studios sohbetine hoş geldiniz!","Oyente":"Dinleyici"},
-          de: {"Chat en directo":"Live-Chat","Entrar":"Beitreten","Tu apodo (máx. 25 caracteres)":"Dein Spitzname (max. 25 Zeichen)","3 en línea":"3 online","¡Bienvenidos al chat de IKA Music Studios!":"Willkommen im Chat von IKA Music Studios!","Oyente":"Zuhörer"},
-          ru: {"Chat en directo":"Чат","Entrar":"Войти","Tu apodo (máx. 25 caracteres)":"Ваш псевдоним (до 25 символов)","3 en línea":"В сети: 3","¡Bienvenidos al chat de IKA Music Studios!":"Добро пожаловать в чат IKA Music Studios!","Oyente":"Слушатель"},
-          ar: {"Chat en directo":"الدردشة المباشرة","Entrar":"دخول","Tu apodo (máx. 25 caracteres)":"اسمك المستعار (25 حرفًا كحد أقصى)","3 en línea":"3 متصلون","¡Bienvenidos al chat de IKA Music Studios!":"مرحبًا بكم في دردشة IKA Music Studios!","Oyente":"مستمع"},
-          zh: {"Chat en directo":"实时聊天","Entrar":"进入","Tu apodo (máx. 25 caracteres)":"你的昵称（最多 25 个字符）","3 en línea":"3 人在线","¡Bienvenidos al chat de IKA Music Studios!":"欢迎来到 IKA Music Studios 聊天室！","Oyente":"听众"},
-          el: {"Chat en directo":"Ζωντανή συνομιλία","Entrar":"Είσοδος","Tu apodo (máx. 25 caracteres)":"Το ψευδώνυμό σας (έως 25 χαρακτήρες)","3 en línea":"3 σε σύνδεση","¡Bienvenidos al chat de IKA Music Studios!":"Καλώς ήρθατε στη συνομιλία του IKA Music Studios!","Oyente":"Ακροατής"}
+          en: {"Chat en directo":"Live Chat","Entrar":"Join","Tu apodo (máx. 25 caracteres)":"Your nickname (max. 25 characters)","3 en línea":"3 online","¡Bienvenidos al chat de IKA Music!":"Welcome to the IKA Music chat!","Oyente":"Listener"},
+          fr: {"Chat en directo":"Chat en direct","Entrar":"Entrer","Tu apodo (máx. 25 caracteres)":"Votre pseudo (25 caractères max.)","3 en línea":"3 en ligne","¡Bienvenidos al chat de IKA Music!":"Bienvenue dans le chat d’IKA Music !","Oyente":"Auditeur"},
+          tr: {"Chat en directo":"Canlı Sohbet","Entrar":"Katıl","Tu apodo (máx. 25 caracteres)":"Takma adınız (en fazla 25 karakter)","3 en línea":"3 kişi çevrimiçi","¡Bienvenidos al chat de IKA Music!":"IKA Music sohbetine hoş geldiniz!","Oyente":"Dinleyici"},
+          de: {"Chat en directo":"Live-Chat","Entrar":"Beitreten","Tu apodo (máx. 25 caracteres)":"Dein Spitzname (max. 25 Zeichen)","3 en línea":"3 online","¡Bienvenidos al chat de IKA Music!":"Willkommen im Chat von IKA Music!","Oyente":"Zuhörer"},
+          ru: {"Chat en directo":"Чат","Entrar":"Войти","Tu apodo (máx. 25 caracteres)":"Ваш псевдоним (до 25 символов)","3 en línea":"В сети: 3","¡Bienvenidos al chat de IKA Music!":"Добро пожаловать в чат IKA Music!","Oyente":"Слушатель"},
+          ar: {"Chat en directo":"الدردشة المباشرة","Entrar":"دخول","Tu apodo (máx. 25 caracteres)":"اسمك المستعار (25 حرفًا كحد أقصى)","3 en línea":"3 متصلون","¡Bienvenidos al chat de IKA Music!":"مرحبًا بكم في دردشة IKA Music!","Oyente":"مستمع"},
+          zh: {"Chat en directo":"实时聊天","Entrar":"进入","Tu apodo (máx. 25 caracteres)":"你的昵称（最多 25 个字符）","3 en línea":"3 人在线","¡Bienvenidos al chat de IKA Music!":"欢迎来到 IKA Music 聊天室！","Oyente":"听众"},
+          el: {"Chat en directo":"Ζωντανή συνομιλία","Entrar":"Είσοδος","Tu apodo (máx. 25 caracteres)":"Το ψευδώνυμό σας (έως 25 χαρακτήρες)","3 en línea":"3 σε σύνδεση","¡Bienvenidos al chat de IKA Music!":"Καλώς ήρθατε στη συνομιλία του IKA Music!","Oyente":"Ακροατής"}
         };
         Object.entries(chatTranslations).forEach(([code, entries]) => {
           Object.assign(interfaceTranslations[code], entries);
@@ -1811,10 +1811,10 @@
         function openLegalModal(type) {
             const titles = { notice: 'Aviso legal', privacy: 'Política de privacidad', terms: 'Condiciones de uso', copyright: 'Derechos de autor' };
             const texts = {
-                notice: '<p>IKA Music Studios es un proyecto independiente de producción y difusión musical.</p>',
+                notice: '<p>IKA Music es un proyecto independiente de producción y difusión musical.</p>',
                 privacy: '<p>No comercializamos ni cedemos tus datos a terceros.</p>',
                 terms: '<p>El contenido publicado es para disfrute público libre de anuncios.</p>',
-                copyright: '<p>Todas las composiciones y producciones originales pertenecen a IKA Music Studios.</p>'
+                copyright: '<p>Todas las composiciones y producciones originales pertenecen a IKA Music.</p>'
             };
             document.getElementById('legal-title').textContent = titles[type] || 'Legal';
             document.getElementById('legal-body').innerHTML = texts[type] || '';
@@ -2250,7 +2250,7 @@
         applyInterfaceLanguage();
         observeInterfaceTranslations();
 
-        // IKA Music Studios: cuenta, playlists privadas, likes y comentarios.
+        // IKA Music: cuenta, playlists privadas, likes y comentarios.
         const IKA_USER_PLAYLISTS='ika_user_playlists', IKA_USER_PLAYLIST_TRACKS='ika_user_playlist_tracks';
         let ikaAuthUser=null, ikaCurrentCommentsTrack=null, ikaCurrentLikeTrack=null, ikaLikedTrackKeys=new Set();
         function ikaTrackContext(){const c=collections[currentCollection];if(!c)return null;let a=c.tracks;if(typeof a==='string'){try{a=JSON.parse(a)}catch(e){a=[]}}const t=Array.isArray(a)?a[currentTrack]:null;if(!t)return null;return {track_id:String(t.id),collection_id:String(c.id||c.name),collection_name:String(c.name||'Colección'),track_name:String(t.name||t.title||'Sin título'),key:String(c.id||c.name)+'::'+String(t.id)}}
