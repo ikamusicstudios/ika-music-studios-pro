@@ -784,12 +784,47 @@ function ikaCommentSongName(trackKey){
   // Si no se encuentra en el catálogo, evita mostrar un UUID como si fuera el título.
   return 'Canción no encontrada en el catálogo';
 }
+async function ikaResolveAdminCommentSongs(comments){
+  const rows = Array.isArray(comments) ? comments : [];
+  const collectionIds = [...new Set(rows.map(c => String(c.track_key || '').split('::')[0]).filter(Boolean))];
+  if (!collectionIds.length) return;
+
+  // Consultar directamente Supabase evita depender de una copia local o
+  // de que el catálogo del administrador se haya cargado previamente.
+  const { data, error } = await _supabase
+    .from('collections')
+    .select('id,name,tracks')
+    .in('id', collectionIds);
+  if (error) {
+    console.error('No se pudieron resolver los títulos de comentarios:', error);
+    return;
+  }
+
+  const byId = new Map((data || []).map(collection => [String(collection.id), collection]));
+  rows.forEach(comment => {
+    const parts = String(comment.track_key || '').split('::');
+    if (parts.length < 2) return;
+    const collectionId = parts.shift();
+    const trackId = parts.join('::');
+    const collection = byId.get(collectionId);
+    if (!collection) return;
+
+    let tracks = collection.tracks;
+    if (typeof tracks === 'string') {
+      try { tracks = JSON.parse(tracks); } catch (_) { tracks = []; }
+    }
+    if (!Array.isArray(tracks)) return;
+    const track = tracks.find(item => String(item.id) === trackId);
+    if (track) comment.song_display_name = (track.name || track.title || 'Canción sin título') + ' · ' + (collection.name || 'Colección');
+  });
+}
+
 function ikaRenderAdminComments(){
   const host=document.getElementById('ika-admin-comments-list'); if(!host)return;
   const unread=ikaAdminComments.filter(c=>!ikaCommentSeenIds.has(c.id)).length;
   const badge=document.getElementById('ika-comment-unread-badge'); if(badge){badge.textContent=unread;badge.style.display=unread?'inline-block':'none'}
   if(!ikaAdminComments.length){host.innerHTML='<div class="chat-empty">Todavía no hay comentarios.</div>';return}
-  host.innerHTML=ikaAdminComments.map(c=>{const seen=ikaCommentSeenIds.has(c.id);return `<article style="padding:12px;border:1px solid ${seen?'var(--border)':'#d99b35'};border-left:4px solid ${seen?'var(--border)':'#d99b35'};border-radius:10px;background:var(--card-bg,rgba(0,0,0,.12))"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><strong>${ikaAdminEsc(ikaCommentSongName(c.track_key))}</strong><small>${ikaAdminEsc(new Date(c.created_at).toLocaleString())}</small></div><div style="margin:6px 0"><b>${ikaAdminEsc(c.alias)}</b>: ${ikaAdminEsc(c.message)}</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:12px;color:var(--muted)">${seen?'✓ Leído':'● NUEVO'}</span>${seen?'':`<button class="btn-secondary" type="button" onclick="ikaMarkCommentRead('${c.id}')">Marcar leído</button>`}<button class="btn-secondary" type="button" onclick="ikaDeleteAdminComment('${c.id}')">Eliminar comentario</button></div></article>`}).join('');
+  host.innerHTML=ikaAdminComments.map(c=>{const seen=ikaCommentSeenIds.has(c.id);return `<article style="padding:12px;border:1px solid ${seen?'var(--border)':'#d99b35'};border-left:4px solid ${seen?'var(--border)':'#d99b35'};border-radius:10px;background:var(--card-bg,rgba(0,0,0,.12))"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><strong>${ikaAdminEsc(c.song_display_name || ikaCommentSongName(c.track_key))}</strong><small>${ikaAdminEsc(new Date(c.created_at).toLocaleString())}</small></div><div style="margin:6px 0"><b>${ikaAdminEsc(c.alias)}</b>: ${ikaAdminEsc(c.message)}</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:12px;color:var(--muted)">${seen?'✓ Leído':'● NUEVO'}</span>${seen?'':`<button class="btn-secondary" type="button" onclick="ikaMarkCommentRead('${c.id}')">Marcar leído</button>`}<button class="btn-secondary" type="button" onclick="ikaDeleteAdminComment('${c.id}')">Eliminar comentario</button></div></article>`}).join('');
 }
 function ikaMarkCommentRead(id){ikaCommentSeenIds.add(id);localStorage.setItem('ika_admin_seen_comment_ids',JSON.stringify([...ikaCommentSeenIds]));ikaRenderAdminComments()}
 async function ikaLoadAdminComments(){
@@ -800,6 +835,7 @@ async function ikaLoadAdminComments(){
   const {data,error}=await _supabase.from('ika_track_comments').select('id,track_key,alias,message,created_at').order('created_at',{ascending:false}).limit(100);
   if(error){if(host)host.innerHTML='<div class="chat-error">No se pudieron cargar los comentarios: '+ikaAdminEsc(error.message)+'</div>';return}
   ikaAdminComments=data||[];
+  await ikaResolveAdminCommentSongs(ikaAdminComments);
   if(!ikaCommentSeenInitialized){ikaAdminComments.forEach(c=>ikaCommentSeenIds.add(c.id));localStorage.setItem('ika_admin_seen_comment_ids',JSON.stringify([...ikaCommentSeenIds]));ikaCommentSeenInitialized=true;}
   ikaRenderAdminComments();
 }
@@ -812,8 +848,12 @@ async function ikaDeleteAdminComment(id){
 function ikaStartCommentNotifications(){
   if(ikaCommentRealtimeChannel)_supabase.removeChannel(ikaCommentRealtimeChannel);
   ikaCommentRealtimeChannel=_supabase.channel('ika-admin-song-comments').on('postgres_changes',{event:'INSERT',schema:'public',table:'ika_track_comments'},payload=>{
-    const c=payload.new;if(!c?.id)return;ikaAdminComments=[c,...ikaAdminComments.filter(x=>x.id!==c.id)].slice(0,100);ikaRenderAdminComments();
-    if(document.visibilityState==='visible' && 'Notification' in window && Notification.permission==='granted')new Notification('Nuevo comentario en IKA Music Studios',{body:ikaCommentSongName(c.track_key)+' — '+c.alias});
+    const c=payload.new;if(!c?.id)return;
+    ikaAdminComments=[c,...ikaAdminComments.filter(x=>x.id!==c.id)].slice(0,100);
+    ikaResolveAdminCommentSongs([c]).then(()=>{
+      ikaRenderAdminComments();
+      if(document.visibilityState==='visible' && 'Notification' in window && Notification.permission==='granted')new Notification('Nuevo comentario en IKA Music Studios',{body:(c.song_display_name || ikaCommentSongName(c.track_key))+' — '+c.alias});
+    });
   }).subscribe();
 }
 async function ikaEnableDesktopCommentAlerts(){if('Notification' in window){const p=await Notification.requestPermission();alert(p==='granted'?'Avisos de escritorio activados.':'Avisos de escritorio no autorizados. El contador del panel seguirá funcionando.')}}
