@@ -752,13 +752,16 @@ function ikaCommentSongName(trackKey){
 function ikaRenderAdminComments(){
   const host=document.getElementById('ika-admin-comments-list'); if(!host)return;
   const unread=ikaAdminComments.filter(c=>!ikaCommentSeenIds.has(c.id)).length;
-  const badge=document.getElementById('ika-comment-unread-badge'); if(badge){badge.textContent=unread+' nuevos';badge.style.display=unread?'inline-block':'none'}
+  const badge=document.getElementById('ika-comment-unread-badge'); if(badge){badge.textContent=unread;badge.style.display=unread?'inline-block':'none'}
   if(!ikaAdminComments.length){host.innerHTML='<div class="chat-empty">Todavía no hay comentarios.</div>';return}
-  host.innerHTML=ikaAdminComments.map(c=>{const seen=ikaCommentSeenIds.has(c.id);return `<article style="padding:12px;border:1px solid ${seen?'var(--border)':'#d99b35'};border-left:4px solid ${seen?'var(--border)':'#d99b35'};border-radius:10px;background:var(--card-bg,rgba(0,0,0,.12))"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><strong>${ikaAdminEsc(ikaCommentSongName(c.track_key))}</strong><small>${ikaAdminEsc(new Date(c.created_at).toLocaleString())}</small></div><div style="margin:6px 0"><b>${ikaAdminEsc(c.alias)}</b>: ${ikaAdminEsc(c.message)}</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:12px;font-weight:700;color:${seen?'var(--muted)':'#d99b35'}">${seen?'✓ Leído':'● NUEVO'}</span>${seen?'':`<button class="btn-secondary" type="button" onclick="ikaMarkCommentRead('${c.id}')">Marcar leído</button>`}<button class="btn-secondary" type="button" onclick="ikaDeleteAdminComment('${c.id}')">Eliminar comentario</button></div></article>`}).join('');
+  host.innerHTML=ikaAdminComments.map(c=>{const seen=ikaCommentSeenIds.has(c.id);return `<article style="padding:12px;border:1px solid ${seen?'var(--border)':'#d99b35'};border-left:4px solid ${seen?'var(--border)':'#d99b35'};border-radius:10px;background:var(--card-bg,rgba(0,0,0,.12))"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><strong>${ikaAdminEsc(ikaCommentSongName(c.track_key))}</strong><small>${ikaAdminEsc(new Date(c.created_at).toLocaleString())}</small></div><div style="margin:6px 0"><b>${ikaAdminEsc(c.alias)}</b>: ${ikaAdminEsc(c.message)}</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:12px;color:var(--muted)">${seen?'✓ Leído':'● NUEVO'}</span>${seen?'':`<button class="btn-secondary" type="button" onclick="ikaMarkCommentRead('${c.id}')">Marcar leído</button>`}<button class="btn-secondary" type="button" onclick="ikaDeleteAdminComment('${c.id}')">Eliminar comentario</button></div></article>`}).join('');
 }
 function ikaMarkCommentRead(id){ikaCommentSeenIds.add(id);localStorage.setItem('ika_admin_seen_comment_ids',JSON.stringify([...ikaCommentSeenIds]));ikaRenderAdminComments()}
 async function ikaLoadAdminComments(){
   const host=document.getElementById('ika-admin-comments-list'); if(host)host.innerHTML='<div class="chat-empty">Cargando comentarios…</div>';
+  // El track_key usa collection_id::track_id. Asegura que el catálogo esté
+  // cargado antes de intentar resolver el título de cada comentario.
+  await loadCollections();
   const {data,error}=await _supabase.from('ika_track_comments').select('id,track_key,alias,message,created_at').order('created_at',{ascending:false}).limit(100);
   if(error){if(host)host.innerHTML='<div class="chat-error">No se pudieron cargar los comentarios: '+ikaAdminEsc(error.message)+'</div>';return}
   ikaAdminComments=data||[];
@@ -911,7 +914,7 @@ async function loadCollections() {
 
     if (error) throw error;
 
-    loadedCollectionsData = data || [];
+    loadedCollectionsData = data || []; if (typeof ikaRenderAdminComments === 'function' && ikaAdminComments.length) ikaRenderAdminComments();
 
     if (loadedCollectionsData.length === 0) {
       listContainer.innerHTML = `<div style="color:var(--muted); padding:15px; text-align:center;">No hay colecciones guardadas en Supabase.</div>`;
