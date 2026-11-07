@@ -39,6 +39,8 @@ async function initChatAdmin() {
         showChatAdminTools();
         await loadChatMessages();
         startChatRealtime();
+        await ikaLoadAdminComments();
+        ikaStartCommentNotifications();
       }
     }
   } catch (err) {
@@ -91,6 +93,8 @@ async function chatAdminLogin() {
     showChatAdminTools();
     await loadChatMessages();
     startChatRealtime();
+    await ikaLoadAdminComments();
+    ikaStartCommentNotifications();
   } catch (err) {
     chatAdminSession = null;
     document.getElementById("chat-login").style.display = "block";
@@ -118,6 +122,7 @@ async function chatAdminLogout() {
     const { error } = await _supabase.auth.signOut();
     if (error) throw error;
     chatAdminSession = null;
+    if (ikaCommentRealtimeChannel) { _supabase.removeChannel(ikaCommentRealtimeChannel); ikaCommentRealtimeChannel = null; }
     chatBannedUsers.clear();
     if (chatRealtimeChannel) {
       _supabase.removeChannel(chatRealtimeChannel);
@@ -692,10 +697,20 @@ button:hover { opacity: .9; }
           <div class="chat-status">Conectado como administrador · Los mensajes públicos se publicarán como IKA.</div>
         </div>
         <div>
+          <button type="button" class="btn-secondary" onclick="ikaEnableDesktopCommentAlerts()">Activar avisos de comentarios 🔔</button>
           <button type="button" class="btn-secondary" onclick="loadChatMessages()">Actualizar chat 🔄</button>
           <button type="button" class="btn-secondary" onclick="chatAdminLogout()">Cerrar sesión</button>
         </div>
       </div>
+
+      <section id="ika-comment-notifications" style="margin:18px 0;padding:16px;border:1px solid var(--border);border-radius:14px;background:rgba(0,210,220,.04)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <h3 style="margin:0">Comentarios de canciones <span id="ika-comment-unread-badge" style="display:none;background:#dc3545;color:white;border-radius:20px;padding:2px 9px;font-size:12px">0</span></h3>
+          <button type="button" class="btn-secondary" onclick="ikaLoadAdminComments()">Actualizar comentarios ↻</button>
+        </div>
+        <p class="chat-help">Recibirás avisos en este panel mientras esté abierto. Aquí puedes localizar y eliminar comentarios.</p>
+        <div id="ika-admin-comments-list" style="display:grid;gap:10px;margin-top:12px"><div class="chat-empty">Cargando comentarios…</div></div>
+      </section>
 
       <div class="chat-compose">
         <label for="chat-ika-message">Publicar un mensaje como IKA</label>
@@ -720,6 +735,50 @@ button:hover { opacity: .9; }
 const supabaseUrl = 'https://mouvifqcmdlypegtyjfw.supabase.co';
 const supabaseKey = 'sb_publishable_5bqnQQBhY5QRnhGW9p7fuA_C4Y2crZP';
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+let ikaCommentRealtimeChannel = null;
+let ikaAdminComments = [];
+let ikaCommentSeenIds = new Set(JSON.parse(localStorage.getItem('ika_admin_seen_comment_ids') || '[]'));
+let ikaCommentSeenInitialized = localStorage.getItem('ika_admin_seen_comment_ids') !== null;
+function ikaAdminEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function ikaCommentSongName(trackKey){
+  const parts=String(trackKey||'').split('::'); const collectionId=parts[0], trackId=parts.slice(1).join('::');
+  const col=(loadedCollectionsData||[]).find(c=>String(c.id)===collectionId||String(c.name)===collectionId);
+  if(!col)return 'Canción ('+trackId+')';
+  let tracks=col.tracks; if(typeof tracks==='string'){try{tracks=JSON.parse(tracks)}catch(e){tracks=[]}}
+  const track=Array.isArray(tracks)?tracks.find(t=>String(t.id)===trackId):null;
+  return (track?.name||'Canción')+' · '+(col.name||'Colección');
+}
+function ikaRenderAdminComments(){
+  const host=document.getElementById('ika-admin-comments-list'); if(!host)return;
+  const unread=ikaAdminComments.filter(c=>!ikaCommentSeenIds.has(c.id)).length;
+  const badge=document.getElementById('ika-comment-unread-badge'); if(badge){badge.textContent=unread;badge.style.display=unread?'inline-block':'none'}
+  if(!ikaAdminComments.length){host.innerHTML='<div class="chat-empty">Todavía no hay comentarios.</div>';return}
+  host.innerHTML=ikaAdminComments.map(c=>`<article style="padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card-bg,rgba(0,0,0,.12))"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><strong>${ikaAdminEsc(ikaCommentSongName(c.track_key))}</strong><small>${ikaAdminEsc(new Date(c.created_at).toLocaleString())}</small></div><div style="margin:6px 0"><b>${ikaAdminEsc(c.alias)}</b>: ${ikaAdminEsc(c.message)}</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:12px;color:var(--muted)">${ikaCommentSeenIds.has(c.id)?'Leído':'Nuevo'}</span><button class="btn-secondary" type="button" onclick="ikaMarkCommentRead('${c.id}')">Marcar leído</button><button class="btn-secondary" type="button" onclick="ikaDeleteAdminComment('${c.id}')">Eliminar comentario</button></div></article>`).join('');
+}
+function ikaMarkCommentRead(id){ikaCommentSeenIds.add(id);localStorage.setItem('ika_admin_seen_comment_ids',JSON.stringify([...ikaCommentSeenIds]));ikaRenderAdminComments()}
+async function ikaLoadAdminComments(){
+  const host=document.getElementById('ika-admin-comments-list'); if(host)host.innerHTML='<div class="chat-empty">Cargando comentarios…</div>';
+  const {data,error}=await _supabase.from('ika_track_comments').select('id,track_key,alias,message,created_at').order('created_at',{ascending:false}).limit(100);
+  if(error){if(host)host.innerHTML='<div class="chat-error">No se pudieron cargar los comentarios: '+ikaAdminEsc(error.message)+'</div>';return}
+  ikaAdminComments=data||[];
+  if(!ikaCommentSeenInitialized){ikaAdminComments.forEach(c=>ikaCommentSeenIds.add(c.id));localStorage.setItem('ika_admin_seen_comment_ids',JSON.stringify([...ikaCommentSeenIds]));ikaCommentSeenInitialized=true;}
+  ikaRenderAdminComments();
+}
+async function ikaDeleteAdminComment(id){
+  if(!confirm('¿Eliminar definitivamente este comentario?'))return;
+  const {error}=await _supabase.from('ika_track_comments').delete().eq('id',id);
+  if(error){alert('No se pudo eliminar: '+error.message);return}
+  ikaAdminComments=ikaAdminComments.filter(c=>c.id!==id);ikaCommentSeenIds.delete(id);localStorage.setItem('ika_admin_seen_comment_ids',JSON.stringify([...ikaCommentSeenIds]));ikaRenderAdminComments();
+}
+function ikaStartCommentNotifications(){
+  if(ikaCommentRealtimeChannel)_supabase.removeChannel(ikaCommentRealtimeChannel);
+  ikaCommentRealtimeChannel=_supabase.channel('ika-admin-song-comments').on('postgres_changes',{event:'INSERT',schema:'public',table:'ika_track_comments'},payload=>{
+    const c=payload.new;if(!c?.id)return;ikaAdminComments=[c,...ikaAdminComments.filter(x=>x.id!==c.id)].slice(0,100);ikaRenderAdminComments();
+    if(document.visibilityState==='visible' && 'Notification' in window && Notification.permission==='granted')new Notification('Nuevo comentario en IKA Music Studios',{body:ikaCommentSongName(c.track_key)+' — '+c.alias});
+  }).subscribe();
+}
+async function ikaEnableDesktopCommentAlerts(){if('Notification' in window){const p=await Notification.requestPermission();alert(p==='granted'?'Avisos de escritorio activados.':'Avisos de escritorio no autorizados. El contador del panel seguirá funcionando.')}}
 
 let loadedCollectionsData = [];
 
