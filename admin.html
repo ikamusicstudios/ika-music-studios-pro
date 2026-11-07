@@ -705,7 +705,7 @@ button:hover { opacity: .9; }
 
       <section id="ika-comment-notifications" style="margin:18px 0;padding:16px;border:1px solid var(--border);border-radius:14px;background:rgba(0,210,220,.04)">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-          <h3 style="margin:0">Comentarios de canciones <span id="ika-comment-unread-badge" style="display:none;background:#dc3545;color:white;border-radius:20px;padding:2px 9px;font-size:12px">0</span></h3>
+          <h3 style="margin:0">Comentarios de canciones <span id="ika-comment-unread-badge" style="display:none;background:#dc3545;color:white;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700;margin-left:6px">0 nuevos</span></h3>
           <button type="button" class="btn-secondary" onclick="ikaLoadAdminComments()">Actualizar comentarios ↻</button>
         </div>
         <p class="chat-help">Recibirás avisos en este panel mientras esté abierto. Aquí puedes localizar y eliminar comentarios.</p>
@@ -752,9 +752,9 @@ function ikaCommentSongName(trackKey){
 function ikaRenderAdminComments(){
   const host=document.getElementById('ika-admin-comments-list'); if(!host)return;
   const unread=ikaAdminComments.filter(c=>!ikaCommentSeenIds.has(c.id)).length;
-  const badge=document.getElementById('ika-comment-unread-badge'); if(badge){badge.textContent=unread;badge.style.display=unread?'inline-block':'none'}
+  const badge=document.getElementById('ika-comment-unread-badge'); if(badge){badge.textContent=unread+' nuevos';badge.style.display=unread?'inline-block':'none'}
   if(!ikaAdminComments.length){host.innerHTML='<div class="chat-empty">Todavía no hay comentarios.</div>';return}
-  host.innerHTML=ikaAdminComments.map(c=>`<article style="padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card-bg,rgba(0,0,0,.12))"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><strong>${ikaAdminEsc(ikaCommentSongName(c.track_key))}</strong><small>${ikaAdminEsc(new Date(c.created_at).toLocaleString())}</small></div><div style="margin:6px 0"><b>${ikaAdminEsc(c.alias)}</b>: ${ikaAdminEsc(c.message)}</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:12px;color:var(--muted)">${ikaCommentSeenIds.has(c.id)?'Leído':'Nuevo'}</span><button class="btn-secondary" type="button" onclick="ikaMarkCommentRead('${c.id}')">Marcar leído</button><button class="btn-secondary" type="button" onclick="ikaDeleteAdminComment('${c.id}')">Eliminar comentario</button></div></article>`).join('');
+  host.innerHTML=ikaAdminComments.map(c=>{const seen=ikaCommentSeenIds.has(c.id);return `<article style="padding:12px;border:1px solid ${seen?'var(--border)':'#d99b35'};border-left:4px solid ${seen?'var(--border)':'#d99b35'};border-radius:10px;background:var(--card-bg,rgba(0,0,0,.12))"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><strong>${ikaAdminEsc(ikaCommentSongName(c.track_key))}</strong><small>${ikaAdminEsc(new Date(c.created_at).toLocaleString())}</small></div><div style="margin:6px 0"><b>${ikaAdminEsc(c.alias)}</b>: ${ikaAdminEsc(c.message)}</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:12px;font-weight:700;color:${seen?'var(--muted)':'#d99b35'}">${seen?'✓ Leído':'● NUEVO'}</span>${seen?'':`<button class="btn-secondary" type="button" onclick="ikaMarkCommentRead('${c.id}')">Marcar leído</button>`}<button class="btn-secondary" type="button" onclick="ikaDeleteAdminComment('${c.id}')">Eliminar comentario</button></div></article>`}).join('');
 }
 function ikaMarkCommentRead(id){ikaCommentSeenIds.add(id);localStorage.setItem('ika_admin_seen_comment_ids',JSON.stringify([...ikaCommentSeenIds]));ikaRenderAdminComments()}
 async function ikaLoadAdminComments(){
