@@ -742,12 +742,47 @@ let ikaCommentSeenIds = new Set(JSON.parse(localStorage.getItem('ika_admin_seen_
 let ikaCommentSeenInitialized = localStorage.getItem('ika_admin_seen_comment_ids') !== null;
 function ikaAdminEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function ikaCommentSongName(trackKey){
-  const parts=String(trackKey||'').split('::'); const collectionId=parts[0], trackId=parts.slice(1).join('::');
-  const col=(loadedCollectionsData||[]).find(c=>String(c.id)===collectionId||String(c.name)===collectionId);
-  if(!col)return 'Canción ('+trackId+')';
-  let tracks=col.tracks; if(typeof tracks==='string'){try{tracks=JSON.parse(tracks)}catch(e){tracks=[]}}
-  const track=Array.isArray(tracks)?tracks.find(t=>String(t.id)===trackId):null;
-  return (track?.name||'Canción')+' · '+(col.name||'Colección');
+  const key = String(trackKey || '').trim();
+  if (!key) return 'Canción sin identificar';
+
+  // Formato actual: collection_id::track_id.
+  // Comentarios antiguos pueden guardar solamente el track_id (UUID de Suno).
+  const parts = key.split('::');
+  const hasCollection = parts.length > 1;
+  const collectionId = hasCollection ? parts.shift() : '';
+  const trackId = hasCollection ? parts.join('::') : key;
+  const collections = Array.isArray(loadedCollectionsData) ? loadedCollectionsData : [];
+
+  const parseTracks = collection => {
+    let tracks = collection?.tracks;
+    if (typeof tracks === 'string') {
+      try { tracks = JSON.parse(tracks); } catch (_) { tracks = []; }
+    }
+    return Array.isArray(tracks) ? tracks : [];
+  };
+
+  // Primero intenta resolver la colección indicada en el comentario.
+  if (hasCollection) {
+    const collection = collections.find(c =>
+      String(c.id) === collectionId || String(c.name) === collectionId
+    );
+    if (collection) {
+      const track = parseTracks(collection).find(t => String(t.id) === trackId);
+      if (track) return (track.name || 'Canción sin título') + ' · ' + (collection.name || 'Colección');
+    }
+  }
+
+  // Compatibilidad con comentarios cuyo track_key contiene solo el UUID.
+  // También sirve como respaldo si la colección guardada en el key ya no existe.
+  for (const collection of collections) {
+    const track = parseTracks(collection).find(t =>
+      String(t.id) === trackId || String(t.id) === key
+    );
+    if (track) return (track.name || 'Canción sin título') + ' · ' + (collection.name || 'Colección');
+  }
+
+  // Si no se encuentra en el catálogo, evita mostrar un UUID como si fuera el título.
+  return 'Canción no encontrada en el catálogo';
 }
 function ikaRenderAdminComments(){
   const host=document.getElementById('ika-admin-comments-list'); if(!host)return;
