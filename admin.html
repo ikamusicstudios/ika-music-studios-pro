@@ -741,50 +741,41 @@ let ikaAdminComments = [];
 let ikaCommentSeenIds = new Set(JSON.parse(localStorage.getItem('ika_admin_seen_comment_ids') || '[]'));
 let ikaCommentSeenInitialized = localStorage.getItem('ika_admin_seen_comment_ids') !== null;
 function ikaAdminEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function ikaCommentSongName(trackKey){
-  const raw = String(trackKey ?? '').trim();
-  if (!raw) return 'Canción no identificada';
+function ikaCommentSongName(commentOrKey){
+  // Los comentarios nuevos guardan el título y la colección junto a track_key.
+  // Así el aviso no depende de que el catálogo haya terminado de cargar.
+  const comment = commentOrKey && typeof commentOrKey === 'object' ? commentOrKey : null;
+  const savedTitle = String(comment?.track_name || '').trim();
+  const savedCollection = String(comment?.collection_name || '').trim();
+  if (savedTitle) return savedCollection ? `${savedTitle} · ${savedCollection}` : savedTitle;
 
-  // El sitio público guarda la clave como collection_id::track_id.
-  // También admitimos claves antiguas que contienen solo track_id.
+  const raw = String(comment ? comment.track_key : commentOrKey ?? '').trim();
+  if (!raw) return 'Canción no identificada';
   const parts = raw.split('::');
   const collectionId = parts.length > 1 ? parts[0].trim() : '';
   const trackId = (parts.length > 1 ? parts.slice(1).join('::') : raw).trim();
-
-  const collections = Array.isArray(loadedCollectionsData) ? loadedCollectionsData : [];
+  const catalog = Array.isArray(loadedCollectionsData) ? loadedCollectionsData : [];
   const tracksOf = collection => {
     let tracks = collection?.tracks;
-    if (typeof tracks === 'string') {
-      try { tracks = JSON.parse(tracks); } catch (_) { tracks = []; }
-    }
+    if (typeof tracks === 'string') { try { tracks = JSON.parse(tracks); } catch (_) { tracks = []; } }
     return Array.isArray(tracks) ? tracks : [];
   };
-  const idOf = track => String(
-    track?.id ?? track?.track_id ?? track?.clip_id ?? track?.clip?.id ?? ''
-  ).trim();
-  const nameOf = track =>
-    track?.name || track?.title || track?.clip?.title || track?.clip?.name || '';
+  const idOf = track => String(track?.id ?? track?.track_id ?? track?.clip_id ?? track?.clip?.id ?? '').trim();
+  const nameOf = track => String(track?.name || track?.title || track?.clip?.title || track?.clip?.name || '').trim();
+  const collectionName = collection => String(collection?.name || 'Colección');
 
-  // 1) Búsqueda exacta en la colección indicada en track_key.
   if (collectionId) {
-    const collection = collections.find(c =>
-      String(c?.id ?? '').trim() === collectionId ||
-      String(c?.name ?? '').trim() === collectionId
-    );
+    const collection = catalog.find(c => String(c?.id ?? '').trim() === collectionId || String(c?.name ?? '').trim() === collectionId);
     if (collection) {
       const track = tracksOf(collection).find(t => idOf(t) === trackId);
-      if (track) return `${nameOf(track) || 'Canción sin título'} · ${collection.name || 'Colección'}`;
+      if (track && nameOf(track)) return `${nameOf(track)} · ${collectionName(collection)}`;
     }
   }
-
-  // 2) Respaldo: buscar el ID de canción en todas las colecciones.
-  for (const collection of collections) {
+  for (const collection of catalog) {
     const track = tracksOf(collection).find(t => idOf(t) === trackId);
-    if (track) return `${nameOf(track) || 'Canción sin título'} · ${collection.name || 'Colección'}`;
+    if (track && nameOf(track)) return `${nameOf(track)} · ${collectionName(collection)}`;
   }
-
-  // No mostrar nunca el UUID como si fuera el nombre de la canción.
-  return 'Canción no encontrada en el catálogo';
+  return 'Título no guardado en este comentario';
 }
 function ikaRenderAdminComments(){
   const host = document.getElementById('ika-admin-comments-list');
@@ -806,7 +797,7 @@ function ikaRenderAdminComments(){
     const seen = ikaCommentSeenIds.has(c.id);
     return `<article style="padding:12px;border:1px solid ${seen ? 'var(--border)' : '#d99b35'};border-left:4px solid ${seen ? 'var(--border)' : '#d99b35'};border-radius:10px;background:var(--card-bg,rgba(0,0,0,.12))">
       <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
-        <strong>${ikaAdminEsc(ikaCommentSongName(c.track_key))}</strong>
+        <strong>${ikaAdminEsc(ikaCommentSongName(c))}</strong>
         <small>${ikaAdminEsc(new Date(c.created_at).toLocaleString())}</small>
       </div>
       <div style="margin:6px 0"><b>${ikaAdminEsc(c.alias)}</b>: ${ikaAdminEsc(c.message)}</div>
@@ -823,7 +814,7 @@ async function ikaLoadAdminComments(){
   // Cargar el catálogo antes de resolver los títulos de los comentarios.
   await loadCollections();
   const host=document.getElementById('ika-admin-comments-list'); if(host)host.innerHTML='<div class="chat-empty">Cargando comentarios…</div>';
-  const {data,error}=await _supabase.from('ika_track_comments').select('id,track_key,alias,message,created_at').order('created_at',{ascending:false}).limit(100);
+  const {data,error}=await _supabase.from('ika_track_comments').select('id,track_key,track_name,collection_name,alias,message,created_at').order('created_at',{ascending:false}).limit(100);
   if(error){if(host)host.innerHTML='<div class="chat-error">No se pudieron cargar los comentarios: '+ikaAdminEsc(error.message)+'</div>';return}
   ikaAdminComments=data||[];
   if(!ikaCommentSeenInitialized){ikaAdminComments.forEach(c=>ikaCommentSeenIds.add(c.id));localStorage.setItem('ika_admin_seen_comment_ids',JSON.stringify([...ikaCommentSeenIds]));ikaCommentSeenInitialized=true;}
@@ -839,7 +830,7 @@ function ikaStartCommentNotifications(){
   if(ikaCommentRealtimeChannel)_supabase.removeChannel(ikaCommentRealtimeChannel);
   ikaCommentRealtimeChannel=_supabase.channel('ika-admin-song-comments').on('postgres_changes',{event:'INSERT',schema:'public',table:'ika_track_comments'},payload=>{
     const c=payload.new;if(!c?.id)return;ikaAdminComments=[c,...ikaAdminComments.filter(x=>x.id!==c.id)].slice(0,100);ikaRenderAdminComments();
-    if(document.visibilityState==='visible' && 'Notification' in window && Notification.permission==='granted')new Notification('Nuevo comentario en IKA Music Studios',{body:ikaCommentSongName(c.track_key)+' — '+c.alias});
+    if(document.visibilityState==='visible' && 'Notification' in window && Notification.permission==='granted')new Notification('Nuevo comentario en IKA Music Studios',{body:ikaCommentSongName(c)+' — '+c.alias});
   }).subscribe();
 }
 async function ikaEnableDesktopCommentAlerts(){if('Notification' in window){const p=await Notification.requestPermission();alert(p==='granted'?'Avisos de escritorio activados.':'Avisos de escritorio no autorizados. El contador del panel seguirá funcionando.')}}
