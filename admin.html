@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IKA Studios · Gestor Local Admin</title>
 <!-- Librería de Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
 // ============================================================
 // MODERACIÓN DEL CHAT (misma instancia Supabase que el gestor)
 // ============================================================
@@ -56,6 +57,8 @@ async function verifyChatAdmin(session) {
 }
 
 async function chatAdminLogin() {
+  const errorBox = document.getElementById("chat-login-error");
+  const loginButton = document.getElementById("chat-admin-login-button");
   chatSetError("chat-login-error", "");
   const email = document.getElementById("chat-admin-email").value.trim();
   const password = document.getElementById("chat-admin-password").value;
@@ -64,9 +67,19 @@ async function chatAdminLogin() {
     return;
   }
 
+  if (loginButton) {
+    loginButton.disabled = true;
+    loginButton.textContent = "Conectando...";
+  }
+  if (errorBox) errorBox.textContent = "Conectando con Supabase...";
+
   try {
+    if (typeof _supabase === "undefined" || !_supabase?.auth) {
+      throw new Error("No se ha inicializado la conexión con Supabase. Recarga la página.");
+    }
     const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    if (!data.session) throw new Error("Supabase no ha devuelto una sesión válida.");
     await verifyChatAdmin(data.session);
     chatAdminSession = data.session;
     document.getElementById("chat-admin-password").value = "";
@@ -76,9 +89,17 @@ async function chatAdminLogin() {
     chatAdminSession = null;
     document.getElementById("chat-login").style.display = "block";
     document.getElementById("chat-tools").style.display = "none";
-    chatSetError("chat-login-error", err.message || "No se pudo iniciar sesión.");
+    chatSetError("chat-login-error", err?.message || "No se pudo iniciar sesión.");
+  } finally {
+    if (loginButton) {
+      loginButton.disabled = false;
+      loginButton.textContent = "Entrar";
+    }
   }
 }
+
+// Exponer explícitamente la función para el botón de acceso del HTML.
+window.chatAdminLogin = chatAdminLogin;
 
 function showChatAdminTools() {
   document.getElementById("chat-login").style.display = "none";
@@ -535,7 +556,7 @@ button:hover { opacity: .9; }
         <label for="chat-admin-password">Contraseña</label>
         <input type="password" id="chat-admin-password" autocomplete="current-password" placeholder="Contraseña">
       </div>
-      <button type="button" onclick="chatAdminLogin()">Entrar</button>
+      <button type="button" id="chat-admin-login-button" onclick="window.chatAdminLogin()">Entrar</button>
       <div id="chat-login-error" class="chat-error" role="alert"></div>
     </div>
 
