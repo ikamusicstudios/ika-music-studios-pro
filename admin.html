@@ -741,81 +741,99 @@ let ikaAdminComments = [];
 let ikaCommentSeenIds = new Set(JSON.parse(localStorage.getItem('ika_admin_seen_comment_ids') || '[]'));
 let ikaCommentSeenInitialized = localStorage.getItem('ika_admin_seen_comment_ids') !== null;
 function ikaAdminEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function ikaAdminParseTracks(collection){
+  let tracks = collection && collection.tracks;
+  if (typeof tracks === 'string') {
+    try { tracks = JSON.parse(tracks); } catch (_) { tracks = []; }
+  }
+  return Array.isArray(tracks) ? tracks : [];
+}
+
 function ikaCommentSongName(trackKey){
   const key = String(trackKey || '').trim();
   if (!key) return 'Canción sin identificar';
 
-  // Formato actual: collection_id::track_id.
-  // Comentarios antiguos pueden guardar solamente el track_id (UUID de Suno).
   const parts = key.split('::');
   const hasCollection = parts.length > 1;
-  const collectionId = hasCollection ? parts.shift() : '';
-  const trackId = hasCollection ? parts.join('::') : key;
-  const collections = Array.isArray(loadedCollectionsData) ? loadedCollectionsData : [];
+  const collectionId = hasCollection ? parts.shift().trim() : '';
+  const trackId = hasCollection ? parts.join('::').trim() : key;
+  // loadedCollectionsData es una variable global léxica (let), no window.loadedCollectionsData.
+  const catalog = typeof loadedCollectionsData !== 'undefined' && Array.isArray(loadedCollectionsData)
+    ? loadedCollectionsData
+    : (Array.isArray(window.loadedCollectionsData) ? window.loadedCollectionsData : []);
 
-  const parseTracks = collection => {
-    let tracks = collection?.tracks;
-    if (typeof tracks === 'string') {
-      try { tracks = JSON.parse(tracks); } catch (_) { tracks = []; }
-    }
-    return Array.isArray(tracks) ? tracks : [];
-  };
-
-  // Primero intenta resolver la colección indicada en el comentario.
   if (hasCollection) {
-    const collection = collections.find(c =>
-      String(c.id) === collectionId || String(c.name) === collectionId
-    );
+    const collection = catalog.find(c => String(c.id).trim() === collectionId || String(c.name).trim() === collectionId);
     if (collection) {
-      const track = parseTracks(collection).find(t => String(t.id) === trackId);
-      if (track) return (track.name || 'Canción sin título') + ' · ' + (collection.name || 'Colección');
+      const track = ikaAdminParseTracks(collection).find(t => String(t.id).trim() === trackId);
+      if (track) return (track.name || track.title || 'Canción sin título') + ' · ' + (collection.name || 'Colección');
     }
   }
 
-  // Compatibilidad con comentarios cuyo track_key contiene solo el UUID.
-  // También sirve como respaldo si la colección guardada en el key ya no existe.
-  for (const collection of collections) {
-    const track = parseTracks(collection).find(t =>
-      String(t.id) === trackId || String(t.id) === key
+  for (const collection of catalog) {
+    const track = ikaAdminParseTracks(collection).find(t =>
+      String(t.id || '').trim() === trackId || String(t.id || '').trim() === key
     );
-    if (track) return (track.name || 'Canción sin título') + ' · ' + (collection.name || 'Colección');
+    if (track) return (track.name || track.title || 'Canción sin título') + ' · ' + (collection.name || 'Colección');
   }
 
-  // Si no se encuentra en el catálogo, evita mostrar un UUID como si fuera el título.
-  return 'Canción no encontrada en el catálogo';
+  return catalog.length ? 'Canción no encontrada en el catálogo' : 'Catálogo no cargado';
 }
+
 async function ikaResolveAdminCommentSongs(comments){
   const rows = Array.isArray(comments) ? comments : [];
-  const collectionIds = [...new Set(rows.map(c => String(c.track_key || '').split('::')[0]).filter(Boolean))];
-  if (!collectionIds.length) return;
+  if (!rows.length) return;
 
-  // Consultar directamente Supabase evita depender de una copia local o
-  // de que el catálogo del administrador se haya cargado previamente.
+  // Cargar todas las colecciones: así no dependemos de que track_key tenga
+  // un formato concreto ni de que el filtro .in() coincida con el ID esperado.
   const { data, error } = await _supabase
     .from('collections')
-    .select('id,name,tracks')
-    .in('id', collectionIds);
-  if (error) {
-    console.error('No se pudieron resolver los títulos de comentarios:', error);
-    return;
+    .select('id,name,tracks');
+
+  let catalog = data;
+  if (error || !Array.isArray(catalog)) {
+    console.error('No se pudo consultar el catálogo para los comentarios:', error);
+    catalog = typeof loadedCollectionsData !== 'undefined' && Array.isArray(loadedCollectionsData)
+      ? loadedCollectionsData
+      : [];
+  } else {
+    loadedCollectionsData = catalog;
   }
 
-  const byId = new Map((data || []).map(collection => [String(collection.id), collection]));
+  const byId = new Map(catalog.map(collection => [String(collection.id).trim(), collection]));
   rows.forEach(comment => {
-    const parts = String(comment.track_key || '').split('::');
-    if (parts.length < 2) return;
-    const collectionId = parts.shift();
-    const trackId = parts.join('::');
-    const collection = byId.get(collectionId);
-    if (!collection) return;
+    const key = String(comment.track_key || '').trim();
+    if (!key) return;
 
-    let tracks = collection.tracks;
-    if (typeof tracks === 'string') {
-      try { tracks = JSON.parse(tracks); } catch (_) { tracks = []; }
+    const parts = key.split('::');
+    const hasCollection = parts.length > 1;
+    const collectionId = hasCollection ? parts.shift().trim() : '';
+    const trackId = hasCollection ? parts.join('::').trim() : key;
+
+    let found = null;
+    if (hasCollection) {
+      const collection = byId.get(collectionId);
+      if (collection) {
+        const track = ikaAdminParseTracks(collection).find(item => String(item.id || '').trim() === trackId);
+        if (track) found = { track, collection };
+      }
     }
-    if (!Array.isArray(tracks)) return;
-    const track = tracks.find(item => String(item.id) === trackId);
-    if (track) comment.song_display_name = (track.name || track.title || 'Canción sin título') + ' · ' + (collection.name || 'Colección');
+
+    // Respaldo para UUID suelto, claves antiguas o colección renombrada.
+    if (!found) {
+      for (const collection of catalog) {
+        const track = ikaAdminParseTracks(collection).find(item =>
+          String(item.id || '').trim() === trackId || String(item.id || '').trim() === key
+        );
+        if (track) { found = { track, collection }; break; }
+      }
+    }
+
+    if (found) {
+      comment.song_display_name = (found.track.name || found.track.title || 'Canción sin título') + ' · ' + (found.collection.name || 'Colección');
+    } else {
+      comment.song_display_name = 'Canción no encontrada en el catálogo';
+    }
   });
 }
 
