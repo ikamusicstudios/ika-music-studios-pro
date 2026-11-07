@@ -807,7 +807,7 @@ async function processAndUpload() {
     const rawClips = sunoData.playlist_clips || sunoData.clips || [];
     const tracks = rawClips.map(item => {
       const clip = item.clip || item;
-      return { id: clip.id, name: clip.title || clip.name || "Sin título" };
+      return { id: clip.id, name: clip.title || clip.name || "Sin título", audio_url: clip.audio_url || clip.mp3_url || clip.audioUrl || clip.stream_url || null };
     }).filter(t => t.id);
 
     if (tracks.length === 0) {
