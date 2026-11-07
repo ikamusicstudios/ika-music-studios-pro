@@ -12,6 +12,10 @@
 // ============================================================
 let chatAdminSession = null;
 let chatBannedUsers = new Set();
+let chatRealtimeChannel = null;
+let chatSoundEnabled = false;
+let chatAudioContext = null;
+let chatSeenMessageIds = new Set();
 
 function chatSetError(id, message) {
   const el = document.getElementById(id);
@@ -34,6 +38,7 @@ async function initChatAdmin() {
         chatAdminSession = data.session;
         showChatAdminTools();
         await loadChatMessages();
+        startChatRealtime();
       }
     }
   } catch (err) {
@@ -85,6 +90,7 @@ async function chatAdminLogin() {
     document.getElementById("chat-admin-password").value = "";
     showChatAdminTools();
     await loadChatMessages();
+    startChatRealtime();
   } catch (err) {
     chatAdminSession = null;
     document.getElementById("chat-login").style.display = "block";
@@ -113,6 +119,10 @@ async function chatAdminLogout() {
     if (error) throw error;
     chatAdminSession = null;
     chatBannedUsers.clear();
+    if (chatRealtimeChannel) {
+      _supabase.removeChannel(chatRealtimeChannel);
+      chatRealtimeChannel = null;
+    }
     document.getElementById("chat-tools").style.display = "none";
     document.getElementById("chat-login").style.display = "block";
     document.getElementById("chat-messages").innerHTML =
@@ -133,7 +143,7 @@ async function loadChatMessages() {
       _supabase.from("ika_music_chat_messages")
         .select("id,user_id,nickname,message,created_at,updated_at")
         .order("created_at", { ascending: false })
-        .limit(100),
+        .limit(500),
       _supabase.from("ika_music_chat_bans").select("user_id")
     ]);
     if (messagesError) throw messagesError;
@@ -145,7 +155,28 @@ async function loadChatMessages() {
       return;
     }
 
-    container.innerHTML = messages.map(msg => {
+    // Herramientas masivas: agrupar usuarios por ID y permitir borrar todo su historial.
+    const userGroups = new Map();
+    messages.forEach(msg => {
+      if (!msg.user_id) return;
+      if (!userGroups.has(msg.user_id)) userGroups.set(msg.user_id, { nickname: msg.nickname || "Usuario", count: 0 });
+      userGroups.get(msg.user_id).count++;
+    });
+    const bulkPanel = `
+      <div class="chat-bulk-tools">
+        <div class="chat-bulk-head">
+          <strong>Gestión de mensajes por usuario</strong>
+          <button type="button" class="btn-danger" data-chat-action="clear-all">Vaciar todo el chat</button>
+        </div>
+        <p class="chat-help">Borra de una vez todos los mensajes de un usuario, incluidos los que no aparecen en los últimos 100.</p>
+        ${[...userGroups.entries()].map(([userId, info]) => `
+          <div class="chat-user-row">
+            <span><strong>${chatEscape(info.nickname)}</strong> · ${info.count} mensaje(s) recientes<br><small>ID: ${chatEscape(userId)}</small></span>
+            <button type="button" class="btn-danger" data-chat-action="delete-user" data-user-id="${chatEscape(userId)}">Borrar todos sus mensajes</button>
+          </div>`).join("")}
+      </div>`;
+
+    container.innerHTML = bulkPanel + messages.map(msg => {
       const isBanned = chatBannedUsers.has(msg.user_id);
       const date = msg.created_at ? new Date(msg.created_at).toLocaleString("es-ES") : "";
       return `
@@ -166,6 +197,93 @@ async function loadChatMessages() {
     container.innerHTML = '<div class="chat-empty">No se pudieron cargar los mensajes.</div>';
     chatSetError("chat-moderation-error", "Error de Supabase: " + (err.message || err));
   }
+}
+
+async function deleteAllMessagesForUser(userId) {
+  if (!chatAdminSession || !userId) return;
+  const { count, error: countError } = await _supabase.from("ika_music_chat_messages")
+    .select("id", { count: "exact", head: true }).eq("user_id", userId);
+  if (countError) throw countError;
+  if (!confirm(`Vas a borrar ${count} mensaje(s) de este usuario. Esta acción no se puede deshacer. ¿Continuar?`)) return;
+  const { error } = await _supabase.from("ika_music_chat_messages").delete().eq("user_id", userId);
+  if (error) throw error;
+  await loadChatMessages();
+  chatSetError("chat-moderation-error", `Se han eliminado los mensajes del usuario (${count} en la consulta).`);
+}
+
+async function clearEntireChat() {
+  if (!chatAdminSession) return;
+  const first = confirm("ATENCIÓN: vas a eliminar TODOS los mensajes del chat. Esta acción no se puede deshacer. ¿Quieres continuar?");
+  if (!first) return;
+  const second = prompt('Para confirmar, escribe exactamente: VACIAR CHAT');
+  if (second !== "VACIAR CHAT") {
+    if (second !== null) alert("Texto de confirmación incorrecto. No se ha borrado nada.");
+    return;
+  }
+  try {
+    const { error } = await _supabase.from("ika_music_chat_messages").delete().not("id", "is", null);
+    if (error) throw error;
+    await loadChatMessages();
+    chatSetError("chat-moderation-error", "El chat se ha vaciado correctamente.");
+  } catch (err) {
+    chatSetError("chat-moderation-error", "No se pudo vaciar el chat: " + (err.message || err));
+  }
+}
+
+function activateChatMentionSound() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) throw new Error("Este navegador no admite audio web.");
+    if (!chatAudioContext) chatAudioContext = new AudioCtx();
+    chatAudioContext.resume();
+    chatSoundEnabled = true;
+    const status = document.getElementById("chat-sound-status");
+    if (status) status.textContent = "Sonido de menciones @IKA activado en este navegador.";
+    playChatMentionSound();
+  } catch (err) {
+    chatSetError("chat-moderation-error", "No se pudo activar el sonido: " + err.message);
+  }
+}
+
+function playChatMentionSound() {
+  if (!chatSoundEnabled || !chatAudioContext) return;
+  try {
+    const now = chatAudioContext.currentTime;
+    [0, 0.22].forEach((offset, i) => {
+      const oscillator = chatAudioContext.createOscillator();
+      const gain = chatAudioContext.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = i === 0 ? 880 : 1175;
+      gain.gain.setValueAtTime(0.0001, now + offset);
+      gain.gain.exponentialRampToValueAtTime(0.16, now + offset + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.16);
+      oscillator.connect(gain); gain.connect(chatAudioContext.destination);
+      oscillator.start(now + offset); oscillator.stop(now + offset + 0.17);
+    });
+  } catch (_) {}
+}
+
+function startChatRealtime() {
+  if (!chatAdminSession || chatRealtimeChannel) return;
+  chatRealtimeChannel = _supabase.channel("ika-chat-admin-live")
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "ika_music_chat_messages" }, payload => {
+      const row = payload.new || {};
+      if (!row.id || chatSeenMessageIds.has(row.id)) return;
+      chatSeenMessageIds.add(row.id);
+      if (row.user_id === chatAdminSession?.user?.id) return;
+      if (/@\s*IKA\b/i.test(row.message || "")) {
+        playChatMentionSound();
+        const status = document.getElementById("chat-sound-status");
+        if (status) status.textContent = `Nueva mención @IKA de ${row.nickname || "un usuario"}.`;
+        loadChatMessages();
+      }
+    })
+    .subscribe(status => {
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        const el = document.getElementById("chat-sound-status");
+        if (el) el.textContent = "No se pudo activar la escucha en directo. Comprueba Realtime en Supabase.";
+      }
+    });
 }
 
 async function postAsIKA() {
@@ -253,6 +371,8 @@ document.addEventListener("click", event => {
   if (action === "delete") deleteChatMessage(button.dataset.messageId);
   if (action === "ban") setChatBan(button.dataset.userId, true);
   if (action === "unban") setChatBan(button.dataset.userId, false);
+  if (action === "delete-user") deleteAllMessagesForUser(button.dataset.userId).catch(err => chatSetError("chat-moderation-error", "No se pudieron borrar los mensajes: " + (err.message || err)));
+  if (action === "clear-all") clearEntireChat();
 });
 
 </script>
@@ -457,6 +577,11 @@ button:hover { opacity: .9; }
 .chat-message-text { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.45; margin-bottom:10px; }
 .chat-message-actions { display:flex; gap:7px; flex-wrap:wrap; }
 .chat-message-actions button { margin:0; }
+.chat-bulk-tools { border:1px solid var(--border); border-radius:8px; padding:14px; margin-bottom:14px; background:var(--panel2); }
+.chat-bulk-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+.chat-user-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 0; border-top:1px solid var(--border); }
+.chat-user-row small, .chat-help { color:var(--muted); font-size:12px; }
+.chat-notification-tools { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:14px 0; }
 .chat-empty { color:var(--muted); text-align:center; padding:18px; border:1px dashed var(--border); border-radius:8px; }
 .chat-error { color:var(--error); font-size:13px; margin-top:10px; }
 @media (max-width: 650px) {
@@ -578,6 +703,10 @@ button:hover { opacity: .9; }
         <div><button type="button" onclick="postAsIKA()">Publicar como IKA</button></div>
       </div>
 
+      <div class="chat-notification-tools">
+        <button type="button" class="btn-secondary" onclick="activateChatMentionSound()">Activar sonido de menciones 🔔</button>
+        <span id="chat-sound-status" class="chat-help">Pulsa una vez para permitir el sonido cuando alguien escriba @IKA. El panel debe permanecer abierto.</span>
+      </div>
       <h3 style="font-size:16px; margin:20px 0 12px;">Mensajes recientes</h3>
       <div id="chat-messages" class="chat-messages">
         <div class="chat-empty">Inicia sesión para cargar los mensajes.</div>
