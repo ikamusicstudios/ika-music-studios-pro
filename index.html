@@ -509,10 +509,24 @@
 
         @media (max-width: 768px) {
             .category-grid { grid-template-columns: 1fr; }
-            .collection-layout { grid-template-columns: 1fr; }
+            .collection-layout { grid-template-columns: 1fr; gap: 14px; }
             .collab-form { grid-template-columns: 1fr; }
             .player-panel { position: static; }
-            .player-container { height: 400px; }
+            /* En móvil, el reproductor se integra entre los datos del álbum y la lista */
+            .collection-info > .player-panel {
+                margin: 18px 0 20px;
+                padding: 16px 0 0;
+                background: transparent;
+                border: 0;
+                border-top: 1px solid var(--border-color);
+                border-radius: 0;
+                box-shadow: none;
+                backdrop-filter: none;
+            }
+            .player-container { height: 340px; }
+            .player-panel .player-heading { font-size: 1.05rem; }
+            .now-playing { overflow-wrap: anywhere; }
+            .track-list { margin-top: 4px; }
             .player-shield-top { width: 158px; height: 48px; }
             .player-shield-bottom { width: 176px; height: 42px; }
             .player-shield-top span, .player-shield-bottom span { font-size: 0.62rem; letter-spacing: 1.5px; }
@@ -846,6 +860,26 @@
         const previousButton = document.getElementById("previous-button");
         const nextButton = document.getElementById("next-button");
         const trackCounter = document.getElementById("track-counter");
+        const collectionLayout = document.querySelector(".collection-layout");
+        const collectionInfo = document.querySelector(".collection-info");
+        const playerPanel = document.querySelector(".player-panel");
+        const mobileDetailLayout = window.matchMedia("(max-width: 768px)");
+
+        // Móvil: portada/título → reproductor → canciones.
+        // Escritorio: se restauran las dos columnas originales.
+        function arrangeDetailLayout() {
+            if (mobileDetailLayout.matches) {
+                if (playerPanel.parentElement !== collectionInfo) {
+                    collectionInfo.insertBefore(playerPanel, trackList);
+                } else if (playerPanel.nextElementSibling !== trackList) {
+                    collectionInfo.insertBefore(playerPanel, trackList);
+                }
+            } else if (playerPanel.parentElement !== collectionLayout) {
+                collectionLayout.appendChild(playerPanel);
+            }
+        }
+        mobileDetailLayout.addEventListener("change", arrangeDetailLayout);
+        arrangeDetailLayout();
 
         let currentCategory = "album";
         let currentCollection = 0;
