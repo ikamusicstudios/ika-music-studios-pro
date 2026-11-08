@@ -768,31 +768,6 @@
             </div>
         </section>
 
-        <!-- COMPARTE TU CANCIÓN -->
-        <section class="community-section">
-            <h2><i class="fa-solid fa-music"></i> Comparte tu canción de Suno</h2>
-            <form class="collab-form" onsubmit="submitCollabSong(event)">
-                <div class="collab-field"><label>Nombre artístico</label><input required placeholder="Tu nombre"></div>
-                <div class="collab-field"><label>Título de la canción</label><input required placeholder="Título del tema"></div>
-                <div class="collab-field"><label>Estilo / Género</label><input required placeholder="Ej. Flamenco Rock"></div>
-                <div class="collab-field"><label>Idioma</label><select>
-                    <option>Español</option>
-                    <option>English</option>
-                    <option>Français</option>
-                    <option>Türkçe</option>
-                    <option>Deutsch</option>
-                    <option>Русский</option>
-                    <option>العربية</option>
-                    <option>中文</option>
-                    <option>Ελληνικά</option>
-                    <option>日本語</option>
-                    <option>Italiano</option>
-                    <option>Otro</option>
-                </select></div>
-                <div class="collab-field full"><label>Enlace de la canción en Suno</label><input type="url" required placeholder="https://suno.com/song/..."></div>
-                <button class="btn-primary full" type="submit">Enviar propuesta para revisión</button>
-            </form>
-        </section>
 
     </main>
 
@@ -2183,12 +2158,6 @@
                 sendChatMessage();
             }
         });
-
-        function submitCollabSong(e) {
-            e.preventDefault();
-            alert('¡Gracias! Tu propuesta de canción ha sido enviada para revisión.');
-            e.target.reset();
-        }
 
 
         // PWA install: Android/Chromium prompt; iPhone/iPad guided Add to Home Screen.
